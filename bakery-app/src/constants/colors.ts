@@ -1,28 +1,31 @@
 export const Colors = {
-  // Основные цвета
-  primary: '#D4A574',      // Тёплый бежевый (хлеб)
-  secondary: '#8B4513',    // Коричневый (шоколад)
-  accent: '#E85D04',       // Оранжевый акцент
+  // Primary colors (from Lovable design)
+  primary: '#FF6B35',      // Bright orange
+  primaryDark: '#D2691E',  // Dark orange  
+  secondary: '#8B4513',    // Brown
   
-  // Фоны
-  background: '#FFF8F0',   // Кремовый фон
-  surface: '#FFFFFF',      // Белые карточки
-  cardBg: '#FEF3E2',       // Светло-бежевый для карточек
+  // Background colors
+  background: '#FAF7F2',   // Warm beige
+  surface: '#FFFFFF',      // White
+  cardBg: '#FFFFFF',       // White cards
   
-  // Текст
-  text: '#2D1810',         // Тёмно-коричневый текст
-  textLight: '#6B5344',    // Светлый коричневый
-  textMuted: '#9B8579',    // Приглушённый
+  // Text colors
+  text: '#2C1810',         // Dark brown
+  textLight: '#6C6C70',    // Light gray
+  textMuted: '#8E8E93',    // Gray
   
-  // Акценты
-  yellow: '#FFB800',       // Золотой для рейтинга
-  green: '#22C55E',        // Зелёный для статусов
-  red: '#EF4444',          // Красный для скидок
+  // Accent colors
+  accent: '#FF6B35',       // Orange (same as primary)
+  yellow: '#FFCC00',       // Yellow for ratings
+  green: '#34C759',        // Green for success
+  red: '#FF3B30',          // Red for discounts
+  blue: '#007AFF',         // Blue
   
-  // Границы
-  border: '#E8DDD4',
+  // UI colors
+  border: '#E5E5EA',       // Light gray border
   
-  // Градиенты (для использования в LinearGradient)
-  gradientStart: '#FFF8F0',
-  gradientEnd: '#FEE4C4',
+  // Gradients (for LinearGradient)
+  gradientStart: '#FF6B35',
+  gradientEnd: '#D2691E',
+  gradientOrange: ['#FF6B35', '#FF8552', '#D2691E'],
 };
