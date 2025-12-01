@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { router, Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,8 +40,9 @@ export default function Index() {
         {/* Illustration */}
         <View style={styles.illustrationContainer}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600' }}
+            source={{ uri: 'https://dummyimage.com/600x300/FF6B35/fff&text=Пекарня' }}
             style={styles.illustration}
+            resizeMode="cover"
           />
         </View>
 
@@ -149,6 +150,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 24,
+    backgroundColor: Colors.background,
   },
   features: {
     flexDirection: 'row',

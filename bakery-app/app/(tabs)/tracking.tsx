@@ -1,128 +1,242 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../src/constants/colors';
+import { useNotification } from '../../src/context/NotificationContext';
 
-const STEPS = [
-  { id: 1, title: 'Заказ принят', time: '14:30', done: true },
-  { id: 2, title: 'Готовится', time: '14:35', done: true },
-  { id: 3, title: 'В пути', time: '14:50', done: true, active: true },
-  { id: 4, title: 'Доставлен', time: '~15:10', done: false },
+type StepStatus = 'completed' | 'active' | 'pending';
+
+interface TimelineStep {
+  id: string;
+  label: string;
+  time: string;
+  status: StepStatus;
+}
+
+const TIMELINE_STEPS: TimelineStep[] = [
+  { id: '1', label: 'Заказ принят', time: '14:30', status: 'completed' },
+  { id: '2', label: 'Готовится', time: '14:35', status: 'completed' },
+  { id: '3', label: 'Готов к доставке', time: '15:00', status: 'completed' },
+  { id: '4', label: 'В пути', time: '15:10', status: 'active' },
+  { id: '5', label: 'Доставлен', time: '~15:25', status: 'pending' },
 ];
 
 export default function TrackingScreen() {
+  const router = useRouter();
+  const { showNotification } = useNotification();
+
+  const handleCallCourier = () => {
+    Linking.openURL('tel:+79991234567');
+  };
+
+  const handleMessageCourier = () => {
+    showNotification({ title: 'Чат с курьером скоро будет доступен', type: 'info' });
+  };
+
+  const handleContactSupport = () => {
+    showNotification({ title: 'Связываемся с поддержкой...', type: 'info' });
+  };
+
+  const handleCancelOrder = () => {
+    Alert.alert(
+      'Отмена заказа',
+      'Вы уверены, что хотите отменить заказ?',
+      [
+        { text: 'Нет', style: 'cancel' },
+        { 
+          text: 'Да, отменить', 
+          style: 'destructive',
+          onPress: () => {
+            showNotification({ title: 'Заказ отменён', type: 'warning' });
+            router.push('/(tabs)/orders');
+          }
+        },
+      ]
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color={Colors.text} />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Отслеживание</Text>
-        <TouchableOpacity style={styles.helpBtn}>
-          <Ionicons name="help-circle-outline" size={24} color={Colors.text} />
+        <Text style={styles.headerTitle}>Отслеживание заказа</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        {/* Map Placeholder */}
+        <View style={styles.mapContainer}>
+          <LinearGradient
+            colors={['#E8F5E9', '#C8E6C9']}
+            style={styles.mapGradient}
+          >
+            <Ionicons name="map" size={48} color={Colors.green} />
+            <Text style={styles.mapText}>Карта доставки</Text>
+          </LinearGradient>
+
+          {/* Courier Card */}
+          <View style={styles.courierCard}>
+            <View style={styles.courierInfo}>
+              <View style={styles.courierAvatarContainer}>
+                <LinearGradient
+                  colors={Colors.gradientOrange}
+                  style={styles.courierAvatar}
+                >
+                  <Text style={styles.courierAvatarText}>А</Text>
+                </LinearGradient>
+                <View style={styles.onlineIndicator} />
+              </View>
+
+              <View style={styles.courierDetails}>
+                <View style={styles.courierNameRow}>
+                  <Text style={styles.courierName}>Алексей</Text>
+                  <View style={styles.ratingBadge}>
+                    <Ionicons name="star" size={12} color={Colors.yellow} />
+                    <Text style={styles.ratingText}>4.9</Text>
+                  </View>
+                </View>
+                <Text style={styles.courierCar}>Toyota Camry X123XX</Text>
+              </View>
+
+              <View style={styles.courierActions}>
+                <TouchableOpacity style={styles.callButton} onPress={handleCallCourier}>
+                  <Ionicons name="call" size={18} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.messageButton} onPress={handleMessageCourier}>
+                  <Ionicons name="chatbubble-outline" size={18} color={Colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Status Timeline */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Статус заказа</Text>
+          <View style={styles.timeline}>
+            {TIMELINE_STEPS.map((step, index) => (
+              <View key={step.id} style={styles.timelineItem}>
+                {/* Vertical Line */}
+                {index < TIMELINE_STEPS.length - 1 && (
+                  <View style={[
+                    styles.timelineLine,
+                    step.status === 'completed' && styles.timelineLineActive
+                  ]} />
+                )}
+
+                {/* Status Icon */}
+                <View style={styles.timelineIconContainer}>
+                  {step.status === 'completed' && (
+                    <View style={styles.timelineIconCompleted}>
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    </View>
+                  )}
+                  {step.status === 'active' && (
+                    <View style={styles.timelineIconActiveContainer}>
+                      <View style={styles.timelineIconActivePulse} />
+                      <View style={styles.timelineIconActive}>
+                        <View style={styles.timelineIconActiveDot} />
+                      </View>
+                    </View>
+                  )}
+                  {step.status === 'pending' && (
+                    <View style={styles.timelineIconPending}>
+                      <View style={styles.timelineIconPendingDot} />
+                    </View>
+                  )}
+                </View>
+
+                {/* Step Info */}
+                <View style={styles.timelineContent}>
+                  <Text style={[
+                    styles.timelineLabel,
+                    step.status === 'pending' && styles.timelineLabelPending
+                  ]}>
+                    {step.label}
+                  </Text>
+                  <Text style={[
+                    styles.timelineTime,
+                    step.status === 'active' && styles.timelineTimeActive
+                  ]}>
+                    {step.time}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Delivery Info */}
+        <View style={styles.section}>
+          <View style={styles.infoCard}>
+            {/* Estimated Time */}
+            <View style={styles.infoRow}>
+              <View style={[styles.infoIcon, { backgroundColor: `${Colors.primary}20` }]}>
+                <Ionicons name="time-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Прибудет через</Text>
+                <Text style={styles.infoValuePrimary}>15 минут</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoDivider} />
+
+            {/* Address */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <Ionicons name="location-outline" size={20} color={Colors.text} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Адрес доставки</Text>
+                <Text style={styles.infoValue}>ул. Ленина, 25, кв. 10</Text>
+              </View>
+            </View>
+
+            {/* Comment */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <Ionicons name="chatbox-outline" size={20} color={Colors.text} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Комментарий</Text>
+                <Text style={styles.infoValue}>Домофон не работает, позвоните</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoDivider} />
+
+            {/* Order Number */}
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}>
+                <Ionicons name="receipt-outline" size={20} color={Colors.text} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Номер заказа</Text>
+                <Text style={styles.infoValue}>#12345</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ height: 180 }} />
+      </ScrollView>
+
+      {/* Bottom Actions */}
+      <View style={styles.bottomActions}>
+        <TouchableOpacity style={styles.supportButton} onPress={handleContactSupport}>
+          <Ionicons name="alert-circle-outline" size={20} color={Colors.text} />
+          <Text style={styles.supportButtonText}>Связаться с поддержкой</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Map Placeholder */}
-      <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          {/* Simplified map visualization */}
-          <View style={styles.mapGrid}>
-            <View style={styles.road} />
-            <View style={styles.roadV} />
-            
-            {/* Destination marker */}
-            <View style={[styles.marker, { left: '25%', top: '60%' }]}>
-              <View style={styles.markerDot}>
-                <Ionicons name="home" size={16} color="#fff" />
-              </View>
-              <Text style={styles.markerLabel}>Ваш адрес</Text>
-            </View>
-            
-            {/* Courier */}
-            <View style={[styles.courier, { left: '55%', top: '35%' }]}>
-              <View style={styles.courierIcon}>
-                <Text style={{ fontSize: 24 }}>🛵</Text>
-              </View>
-              <View style={styles.courierPulse} />
-            </View>
-            
-            {/* Route line */}
-            <View style={styles.routeLine} />
-          </View>
-        </View>
-        
-        {/* ETA Badge */}
-        <View style={styles.etaBadge}>
-          <Ionicons name="time-outline" size={18} color={Colors.accent} />
-          <Text style={styles.etaText}>~20 мин</Text>
-        </View>
-      </View>
-
-      {/* Courier Card */}
-      <View style={styles.courierCard}>
-        <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }}
-          style={styles.courierPhoto}
-        />
-        <View style={styles.courierInfo}>
-          <Text style={styles.courierName}>Алексей К.</Text>
-          <View style={styles.courierRating}>
-            <Ionicons name="star" size={14} color={Colors.yellow} />
-            <Text style={styles.ratingText}>4.9</Text>
-            <Text style={styles.deliveries}>• 234 доставки</Text>
-          </View>
-        </View>
-        <View style={styles.courierActions}>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="call" size={20} color={Colors.accent} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPrimary]}>
-            <Ionicons name="chatbubble" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Progress Steps */}
-      <View style={styles.stepsContainer}>
-        <Text style={styles.stepsTitle}>Статус заказа</Text>
-        {STEPS.map((step, index) => (
-          <View key={step.id} style={styles.step}>
-            <View style={styles.stepIndicator}>
-              <View style={[
-                styles.stepDot,
-                step.done && styles.stepDotDone,
-                step.active && styles.stepDotActive
-              ]}>
-                {step.done && !step.active && (
-                  <Ionicons name="checkmark" size={14} color="#fff" />
-                )}
-                {step.active && (
-                  <View style={styles.activePulse} />
-                )}
-              </View>
-              {index < STEPS.length - 1 && (
-                <View style={[styles.stepLine, step.done && styles.stepLineDone]} />
-              )}
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={[styles.stepTitle, step.active && styles.stepTitleActive]}>
-                {step.title}
-              </Text>
-              <Text style={styles.stepTime}>{step.time}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {/* Order Summary */}
-      <View style={styles.orderSummary}>
-        <Text style={styles.summaryTitle}>Заказ #1847</Text>
-        <Text style={styles.summaryItems}>2× Круассан, 1× Эклер</Text>
-        <Text style={styles.summaryTotal}>847 ₽</Text>
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancelOrder}>
+          <Text style={styles.cancelButtonText}>Отменить заказ</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -133,294 +247,361 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  
+  // Header
   header: {
+    height: 64,
+    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  helpBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mapContainer: {
-    marginHorizontal: 20,
-    height: 200,
-    borderRadius: 24,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#E8E4D9',
-  },
-  mapGrid: {
-    flex: 1,
-    position: 'relative',
-  },
-  road: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '45%',
-    height: 24,
-    backgroundColor: '#F5F5F0',
-  },
-  roadV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '40%',
-    width: 24,
-    backgroundColor: '#F5F5F0',
-  },
-  marker: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  markerDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  markerLabel: {
-    fontSize: 10,
-    color: Colors.text,
-    fontWeight: '600',
-    marginTop: 4,
-    backgroundColor: '#fff',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  courier: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  courierIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
     elevation: 4,
   },
-  courierPulse: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.accent,
-    opacity: 0.2,
-  },
-  routeLine: {
-    position: 'absolute',
-    left: '28%',
-    top: '48%',
-    width: '30%',
-    height: 3,
-    backgroundColor: Colors.accent,
-    borderRadius: 2,
-    transform: [{ rotate: '-25deg' }],
-  },
-  etaBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  backButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  etaText: {
-    fontSize: 14,
-    fontWeight: '700',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
     color: Colors.text,
-    marginLeft: 6,
   },
-  courierCard: {
-    flexDirection: 'row',
+
+  scrollView: {
+    flex: 1,
+  },
+
+  // Map Section
+  mapContainer: {
+    position: 'relative',
+    height: 300,
+  },
+  mapGradient: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    justifyContent: 'center',
   },
-  courierPhoto: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  mapText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.green,
+  },
+
+  // Courier Card
+  courierCard: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
   },
   courierInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  courierAvatarContainer: {
+    position: 'relative',
+  },
+  courierAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  courierAvatarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.green,
+    borderWidth: 2,
+    borderColor: Colors.surface,
+  },
+  courierDetails: {
     flex: 1,
-    marginLeft: 14,
+  },
+  courierNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
   },
   courierName: {
     fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  courierRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  ratingText: {
-    fontSize: 13,
     fontWeight: '600',
     color: Colors.text,
-    marginLeft: 4,
   },
-  deliveries: {
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: `${Colors.yellow}20`,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.yellow,
+  },
+  courierCar: {
     fontSize: 13,
     color: Colors.textMuted,
-    marginLeft: 6,
   },
   courierActions: {
     flexDirection: 'row',
+    gap: 8,
   },
-  actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.cardBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  actionBtnPrimary: {
-    backgroundColor: Colors.accent,
-  },
-  stepsContainer: {
-    marginHorizontal: 20,
-    marginTop: 24,
-    backgroundColor: Colors.surface,
+  callButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 20,
+    backgroundColor: Colors.green,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stepsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+  messageButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Section
+  section: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: Colors.text,
     marginBottom: 16,
   },
-  step: {
+
+  // Timeline
+  timeline: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  timelineItem: {
+    position: 'relative',
     flexDirection: 'row',
-    minHeight: 50,
+    alignItems: 'flex-start',
+    gap: 16,
+    marginBottom: 24,
   },
-  stepIndicator: {
-    alignItems: 'center',
-    width: 24,
-  },
-  stepDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  timelineLine: {
+    position: 'absolute',
+    left: 15,
+    top: 32,
+    width: 2,
+    height: 40,
     backgroundColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  stepDotDone: {
+  timelineLineActive: {
     backgroundColor: Colors.green,
   },
-  stepDotActive: {
-    backgroundColor: Colors.accent,
+  timelineIconContainer: {
+    position: 'relative',
+    zIndex: 10,
   },
-  activePulse: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  timelineIconCompleted: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineIconActiveContainer: {
+    position: 'relative',
+  },
+  timelineIconActivePulse: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: `${Colors.primary}30`,
+  },
+  timelineIconActive: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineIconActiveDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#fff',
   },
-  stepLine: {
+  timelineIconPending: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.background,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineIconPendingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.textMuted,
+  },
+  timelineContent: {
     flex: 1,
-    width: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+  timelineLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  timelineLabelPending: {
+    color: Colors.textMuted,
+  },
+  timelineTime: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  timelineTimeActive: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+
+  // Info Card
+  infoCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 16,
+  },
+  infoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.text,
+  },
+  infoValuePrimary: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.primary,
+  },
+  infoDivider: {
+    height: 1,
     backgroundColor: Colors.border,
-    marginVertical: 4,
+    marginVertical: 8,
   },
-  stepLineDone: {
-    backgroundColor: Colors.green,
+
+  // Bottom Actions
+  bottomActions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingBottom: 32,
+    gap: 12,
   },
-  stepContent: {
-    flex: 1,
-    marginLeft: 14,
-    paddingBottom: 16,
+  supportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
   },
-  stepTitle: {
+  supportButtonText: {
     fontSize: 15,
     fontWeight: '600',
     color: Colors.text,
   },
-  stepTitleActive: {
-    color: Colors.accent,
-  },
-  stepTime: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  orderSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: 20,
-    marginTop: 16,
-    padding: 16,
+  cancelButton: {
+    height: 48,
     borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  summaryTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  summaryItems: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginLeft: 12,
-  },
-  summaryTotal: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.accent,
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.red,
   },
 });
