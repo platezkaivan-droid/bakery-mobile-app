@@ -16,7 +16,7 @@ export default function Index() {
     
     if (!loading && user) {
       // Если пользователь авторизован - перенаправляем на главную
-      router.replace('/(tabs)/home');
+      router.replace('/home');
     }
   }, [user, loading, rootNavigationState?.key]);
 

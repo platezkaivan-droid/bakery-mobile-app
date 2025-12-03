@@ -22,7 +22,7 @@ export default function LoginScreen() {
     // Если есть сессия, перенаправляем
     if (session) {
       setTimeout(() => {
-        router.replace('/(tabs)/home');
+        router.replace('/home');
       }, 100);
     }
   }, [session, navigationState]);
@@ -36,7 +36,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(email, password);
-      router.replace('/(tabs)/home');
+      router.replace('/home');
     } catch (error: any) {
       Alert.alert('Ошибка входа', error.message);
     } finally {
