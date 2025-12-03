@@ -27,30 +27,30 @@ interface Product {
 
 // Локальные изображения продуктов (исправлены названия файлов)
 const PRODUCT_IMAGES: { [key: string]: any } = {
-  croissant: require('../../assets/products/круассан с шоколадом.jpg'),
-  cinnabon: require('../../assets/products/синнабон классический.jpg'),
-  almondCroissant: require('../../assets/products/круасан с мендалём.jpg'),
-  danish: require('../../assets/products/дасткая булочка.jpg'),
-  donut: require('../../assets/products/пончик глащзирвоанный.jpg'),
-  cinnamonBun: require('../../assets/products/ьбулочка с корицекй.jpg'),
-  napoleon: require('../../assets/products/наполеон классический.jpg'),
-  medovik: require('../../assets/products/медовик.jpg'),
-  redVelvet: require('../../assets/products/красный.png'),
-  cheesecake: require('../../assets/products/чизкейк нбю йорк.jpg'),
-  chocolateCake: require('../../assets/products/шоколадный торт.jpg'),
-  eclair: require('../../assets/products/эулер с кремом.jpg'),
-  macarons: require('../../assets/products/макаранос ассорти.jpg'),
-  tiramisu: require('../../assets/products/тирамису.jpg'),
-  profiterole: require('../../assets/products/профитроли.jpg'),
-  cupcake: require('../../assets/products/капкейк.jpg'),
-  baguette: require('../../assets/products/багет.jpg'),
-  ciabatta: require('../../assets/products/чиабатта.jpg'),
-  ryeBread: require('../../assets/products/хлеб рджаной.jpg'),
-  focaccia: require('../../assets/products/фокачча с размирином.jpg'),
-  berryTart: require('../../assets/products/тарт с яголами.jpg'),
-  pannaCotta: require('../../assets/products/панна котта.jpg'),
-  cremeBrulee: require('../../assets/products/крем брюле.jpg'),
-  strudel: require('../../assets/products/штрудель.jpg'),
+  croissant: require('../../assets/products/kruassan s chocaladom.jpg'),
+  cinnabon: require('../../assets/products/sinabon.jpg'),
+  almondCroissant: require('../../assets/products/kruassan s mendalem.jpg'),
+  danish: require('../../assets/products/datskaya bulochka.jpg'),
+  donut: require('../../assets/products/ponchik glazirovanniy.jpg'),
+  cinnamonBun: require('../../assets/products/bulka s koricey.jpg'),
+  napoleon: require('../../assets/products/napoleon classic.jpg'),
+  medovik: require('../../assets/products/medovic.jpg'),
+  redVelvet: require('../../assets/products/red.png'),
+  cheesecake: require('../../assets/products/cheesecake new york.jpg'),
+  chocolateCake: require('../../assets/products/chcolade tort.jpg'),
+  eclair: require('../../assets/products/ekler s cremom.jpg'),
+  macarons: require('../../assets/products/makarons assorti.jpg'),
+  tiramisu: require('../../assets/products/tiramissu.jpg'),
+  profiterole: require('../../assets/products/profitroli.jpg'),
+  cupcake: require('../../assets/products/kapcake.jpg'),
+  baguette: require('../../assets/products/baget.jpg'),
+  ciabatta: require('../../assets/products/chiabatta.jpg'),
+  ryeBread: require('../../assets/products/hleb rzhanoy.jpg'),
+  focaccia: require('../../assets/products/fokacha s razmarinom.jpg'),
+  berryTart: require('../../assets/products/tart s yagodami.jpg'),
+  pannaCotta: require('../../assets/products/panna kotta.jpg'),
+  cremeBrulee: require('../../assets/products/krem brulle.jpg'),
+  strudel: require('../../assets/products/shtrudel.jpg'),
 };
 
 // Расширенный каталог товаров (UUID соответствуют БД Supabase)
@@ -82,10 +82,10 @@ const PRODUCTS: Product[] = [
 ];
 
 const STORY_IMAGES = {
-  new: require('../../assets/products/круассан с шоколадом.jpg'),
-  sales: require('../../assets/products/макаранос ассорти.jpg'),
-  recipes: require('../../assets/products/хлеб рджаной.jpg'),
-  tips: require('../../assets/products/синнабон классический.jpg'),
+  new: require('../../assets/products/kruassan s chocaladom.jpg'),
+  sales: require('../../assets/products/makarons assorti.jpg'),
+  recipes: require('../../assets/products/hleb rzhanoy.jpg'),
+  tips: require('../../assets/products/sinabon.jpg'),
 };
 
 const STORIES_CONTENT = {
@@ -94,8 +94,8 @@ const STORIES_CONTENT = {
   recipes: {
     title: 'Рецепты', subtitle: 'Готовьте дома', gradient: ['#f093fb', '#f5576c', '#FF6B35'], headerImage: STORY_IMAGES.recipes,
     recipes: [
-      { id: '1', name: 'Домашний хлеб', time: '2 часа', difficulty: 'Средне', image: require('../../assets/products/хлеб рджаной.jpg'), ingredients: ['500 г муки', '10 г дрожжей', '300 мл воды', '1 ч.л. соли', '1 ст.л. сахара', '2 ст.л. масла'], steps: ['Смешайте воду с дрожжами', 'Добавьте муку и соль', 'Замесите тесто', 'Дайте подойти 1 час', 'Выпекайте при 200°C 40 мин'] },
-      { id: '2', name: 'Круассаны', time: '4 часа', difficulty: 'Сложно', image: require('../../assets/products/круассан с шоколадом.jpg'), ingredients: ['500 г муки', '300 мл молока', '80 г сахара', '300 г масла'], steps: ['Замесите тесто', 'Охладите 1 час', 'Раскатайте с маслом', 'Сложите 3 раза', 'Выпекайте при 200°C'] },
+      { id: '1', name: 'Домашний хлеб', time: '2 часа', difficulty: 'Средне', image: require('../../assets/products/hleb rzhanoy.jpg'), ingredients: ['500 г муки', '10 г дрожжей', '300 мл воды', '1 ч.л. соли', '1 ст.л. сахара', '2 ст.л. масла'], steps: ['Смешайте воду с дрожжами', 'Добавьте муку и соль', 'Замесите тесто', 'Дайте подойти 1 час', 'Выпекайте при 200°C 40 мин'] },
+      { id: '2', name: 'Круассаны', time: '4 часа', difficulty: 'Сложно', image: require('../../assets/products/kruassan s chocaladom.jpg'), ingredients: ['500 г муки', '300 мл молока', '80 г сахара', '300 г масла'], steps: ['Замесите тесто', 'Охладите 1 час', 'Раскатайте с маслом', 'Сложите 3 раза', 'Выпекайте при 200°C'] },
     ],
   },
   tips: {
