@@ -7,9 +7,9 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  image_url: string;
+  image_url?: string;
   rating: number;
-  category_id: string;
+  category_id?: string;
 }
 
 interface FavoritesContextType {
@@ -38,32 +38,43 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Сначала получаем список product_id из favorites
+      const { data: favoritesData, error: favError } = await supabase
         .from('favorites')
-        .select(`
-          product_id,
-          products (
-            id,
-            name,
-            description,
-            price,
-            image_url,
-            rating,
-            category_id
-          )
-        `)
+        .select('product_id')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (favError) {
+        console.error('Error loading favorites:', favError);
+        setFavorites([]);
+        return;
+      }
 
-      // Преобразуем данные в нужный формат
-      const favoriteProducts = data
-        .map(item => item.products)
-        .filter(Boolean) as Product[];
+      if (!favoritesData || favoritesData.length === 0) {
+        setFavorites([]);
+        return;
+      }
 
-      setFavorites(favoriteProducts);
+      // Получаем product_id из результата
+      const productIds = favoritesData.map(f => f.product_id);
+
+      // Теперь загружаем сами продукты
+      const { data: productsData, error: prodError } = await supabase
+        .from('products')
+        .select('id, name, description, price, image_url, rating, category_id')
+        .in('id', productIds);
+
+      if (prodError) {
+        console.error('Error loading products:', prodError);
+        setFavorites([]);
+        return;
+      }
+
+      setFavorites(productsData || []);
+      console.log('Loaded favorites from DB:', productsData?.length || 0);
     } catch (error) {
       console.error('Error loading favorites:', error);
+      setFavorites([]);
     } finally {
       setLoading(false);
     }
@@ -71,7 +82,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      loadFavorites();
+      loadFavorites().catch(err => {
+        console.error('Failed to load favorites:', err);
+      });
     } else {
       setFavorites([]);
     }
@@ -86,7 +99,14 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       throw new Error('Необходимо войти в аккаунт');
     }
 
+    // Проверяем, не добавлен ли уже
+    if (isFavorite(product.id)) {
+      console.log('Product already in favorites');
+      return;
+    }
+
     try {
+      // Добавляем в БД
       const { error } = await supabase
         .from('favorites')
         .insert({
@@ -94,15 +114,22 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           product_id: product.id,
         });
 
-      if (error) throw error;
+      if (error) {
+        // Если ошибка дубликата - игнорируем
+        if (error.code === '23505') {
+          console.log('Already in favorites (duplicate)');
+          return;
+        }
+        
+        console.error('Error adding to favorites:', error);
+        throw error;
+      }
 
       // Добавляем в локальное состояние
       setFavorites(prev => [...prev, product]);
-    } catch (error: any) {
-      if (error.code === '23505') {
-        // Уже в избранном
-        return;
-      }
+      console.log('Added to favorites:', product.name);
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
       throw error;
     }
   };
@@ -113,6 +140,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Удаляем из БД
       const { error } = await supabase
         .from('favorites')
         .delete()
@@ -123,7 +151,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
       // Удаляем из локального состояния
       setFavorites(prev => prev.filter(fav => fav.id !== productId));
+      console.log('Removed from favorites:', productId);
     } catch (error) {
+      console.error('Error removing from favorites:', error);
       throw error;
     }
   };

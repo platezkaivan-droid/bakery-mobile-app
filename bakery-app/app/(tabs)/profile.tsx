@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, Modal, TextInput, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useNotification } from '../../src/context/NotificationContext';
 import { useDemoBonus } from '../../src/context/DemoBonusContext';
 import { useSettings, Address, PaymentMethod, ThemeMode, Language } from '../../src/context/SettingsContext';
+import { supabase } from '../../src/lib/supabase';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   
   // Форма нового адреса
@@ -53,13 +55,82 @@ export default function ProfileScreen() {
 
   // Баллы
   const currentPoints = user ? (profile?.bonus_points || 0) : demoBonusPoints;
-  const nextLevelPoints = 500;
-  const progressPercentage = Math.min((currentPoints / nextLevelPoints) * 100, 100);
+  
+  // Система лояльности на основе количества заказов
+  const [totalOrders, setTotalOrders] = useState(0);
+  
+  // Загружаем количество заказов
+  React.useEffect(() => {
+    const loadOrdersCount = async () => {
+      if (!user) return;
+      try {
+        const { count, error } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'delivered');
+        
+        if (!error && count !== null) {
+          setTotalOrders(count);
+        }
+      } catch (error) {
+        console.error('Error loading orders count:', error);
+      }
+    };
+    
+    loadOrdersCount();
+  }, [user]);
+  
+  // Определяем уровень и скидку на основе количества заказов
+  const getLoyaltyInfo = () => {
+    if (totalOrders >= 500) {
+      return { 
+        level: t('profile_gold'), 
+        discount: 8, 
+        color: '#FFD700', 
+        icon: 'trophy' as const,
+        nextLevel: null,
+        ordersToNext: 0,
+        progress: 100
+      };
+    } else if (totalOrders >= 150) {
+      return { 
+        level: t('profile_silver'), 
+        discount: 5, 
+        color: '#C0C0C0', 
+        icon: 'medal' as const,
+        nextLevel: t('profile_gold'),
+        ordersToNext: 500 - totalOrders,
+        progress: (totalOrders / 500) * 100
+      };
+    } else if (totalOrders >= 20) {
+      return { 
+        level: t('profile_bronze'), 
+        discount: 2, 
+        color: '#CD7F32', 
+        icon: 'ribbon' as const,
+        nextLevel: t('profile_silver'),
+        ordersToNext: 150 - totalOrders,
+        progress: (totalOrders / 150) * 100
+      };
+    } else {
+      return { 
+        level: t('profile_newbie'), 
+        discount: 0, 
+        color: colors.textMuted, 
+        icon: 'star-outline' as const,
+        nextLevel: t('profile_bronze'),
+        ordersToNext: 20 - totalOrders,
+        progress: (totalOrders / 20) * 100
+      };
+    }
+  };
+  
+  const loyaltyInfo = getLoyaltyInfo();
   
   const userName = profile?.full_name || t('profile_guest');
   const userEmail = user?.email || t('profile_login');
   const userPhone = profile?.phone || '';
-  const loyaltyLevel = currentPoints >= 500 ? t('profile_platinum') : currentPoints >= 200 ? t('profile_gold') : t('profile_silver');
   const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase() || 'Г';
 
   const handleSignOut = async () => {
@@ -504,6 +575,9 @@ export default function ProfileScreen() {
             { id: 'ru', name: t('language_ru'), flag: '🇷🇺' },
             { id: 'en', name: t('language_en'), flag: '🇬🇧' },
             { id: 'kz', name: t('language_kz'), flag: '🇰🇿' },
+            { id: 'tt', name: t('language_tt'), flag: '🏴' },
+            { id: 'uz', name: t('language_uz'), flag: '🇺🇿' },
+            { id: 'hy', name: t('language_hy'), flag: '🇦🇲' },
           ] as const).map(lang => (
             <TouchableOpacity 
               key={lang.id} 
@@ -571,6 +645,69 @@ export default function ProfileScreen() {
     </Modal>
   );
 
+  // Модалка помощи
+  const renderHelpModal = () => (
+    <Modal visible={showHelpModal} animationType="fade" transparent>
+      <View style={styles.centerModalOverlay}>
+        <View style={[styles.centerModalContent, { paddingBottom: 24 }]}>
+          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: `${colors.primary}15`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <Ionicons name="help-circle" size={48} color={colors.primary} />
+          </View>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 8, textAlign: 'center' }}>Поддержка</Text>
+          <Text style={{ fontSize: 14, color: colors.textMuted, textAlign: 'center', marginBottom: 24 }}>Свяжитесь с нами любым удобным способом:</Text>
+          
+          <TouchableOpacity 
+            style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}
+            onPress={async () => {
+              const url = 'https://t.me/Skrizzzy4';
+              const canOpen = await Linking.canOpenURL(url);
+              if (canOpen) {
+                await Linking.openURL(url);
+              } else {
+                Alert.alert('Ошибка', 'Не удалось открыть Telegram');
+              }
+            }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#0088cc15', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="paper-plane" size={20} color="#0088cc" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 2 }}>Telegram</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>@Skrizzzy4</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24, borderWidth: 1, borderColor: colors.border }}
+            onPress={async () => {
+              const url = 'mailto:vanya.piskunov.95@list.ru';
+              const canOpen = await Linking.canOpenURL(url);
+              if (canOpen) {
+                await Linking.openURL(url);
+              } else {
+                Alert.alert('Ошибка', 'Не удалось открыть почтовый клиент');
+              }
+            }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${colors.primary}15`, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="mail" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 2 }}>Email</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>vanya.piskunov.95@list.ru</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowHelpModal(false)}>
+            <Text style={styles.cancelBtnText}>{t('close')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -581,21 +718,26 @@ export default function ProfileScreen() {
       {renderLanguageModal()}
       {renderThemeModal()}
       {renderAboutModal()}
+      {renderHelpModal()}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <LinearGradient colors={colors.gradientOrange} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <View style={styles.headerContent}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            )}
             
             <Text style={styles.userName}>{userName}</Text>
             <Text style={styles.userEmail}>{userEmail}</Text>
             {userPhone ? <Text style={styles.userPhone}>{userPhone}</Text> : null}
             
             {user ? (
-              <TouchableOpacity style={styles.editButton} onPress={() => showNotification({ title: t('profile_edit'), type: 'info' })}>
+              <TouchableOpacity style={styles.editButton} onPress={() => router.push('/profile/edit')}>
                 <Text style={styles.editButtonText}>{t('profile_edit')}</Text>
               </TouchableOpacity>
             ) : (
@@ -610,18 +752,38 @@ export default function ProfileScreen() {
           {/* Loyalty Card */}
           <View style={styles.loyaltyCard}>
             <View style={styles.loyaltyHeader}>
-              <Ionicons name="trophy" size={24} color={colors.yellow} />
-              <Text style={styles.loyaltyTitle}>{loyaltyLevel} {t('profile_status')}</Text>
+              <Ionicons name={loyaltyInfo.icon} size={24} color={loyaltyInfo.color} />
+              <Text style={styles.loyaltyTitle}>{loyaltyInfo.level} {t('profile_status')}</Text>
+              {loyaltyInfo.discount > 0 && (
+                <View style={[styles.discountBadge, { backgroundColor: `${loyaltyInfo.color}20` }]}>
+                  <Text style={[styles.discountText, { color: loyaltyInfo.color }]}>-{loyaltyInfo.discount}%</Text>
+                </View>
+              )}
             </View>
             
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+            <View style={styles.ordersInfo}>
+              <View style={styles.ordersRow}>
+                <Text style={styles.ordersLabel}>{t('profile_total_orders')}:</Text>
+                <Text style={styles.ordersValue}>{totalOrders}</Text>
               </View>
-              <Text style={styles.progressText}>
-                {currentPoints > 0 ? `${t('profile_next_level')}: ${Math.max(0, nextLevelPoints - currentPoints)} ${t('home_points')}` : t('profile_make_purchase')}
-              </Text>
+              {loyaltyInfo.discount > 0 && (
+                <View style={styles.ordersRow}>
+                  <Text style={styles.ordersLabel}>{t('profile_your_discount')}:</Text>
+                  <Text style={[styles.ordersValue, { color: loyaltyInfo.color }]}>{loyaltyInfo.discount}%</Text>
+                </View>
+              )}
             </View>
+            
+            {loyaltyInfo.nextLevel && (
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${loyaltyInfo.progress}%`, backgroundColor: loyaltyInfo.color }]} />
+                </View>
+                <Text style={styles.progressText}>
+                  {t('profile_to_next_level')} {loyaltyInfo.nextLevel}: {loyaltyInfo.ordersToNext} {t('profile_orders_left')}
+                </Text>
+              </View>
+            )}
             
             <LinearGradient colors={colors.gradientOrange} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.pointsCard}>
               <Text style={styles.pointsLabel}>{t('profile_bonus_points')}</Text>
@@ -695,7 +857,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.menuSection}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => showNotification({ title: t('menu_help'), message: 'support@bakery.ru', type: 'info' })}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => setShowHelpModal(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuIcon}><Ionicons name="help-circle-outline" size={20} color={colors.primary} /></View>
                 <Text style={styles.menuItemText}>{t('menu_help')}</Text>
@@ -739,6 +901,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: { paddingTop: 24, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   headerContent: { alignItems: 'center' },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 4, borderColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  avatarImage: { width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: 'rgba(255,255,255,0.3)', marginBottom: 16 },
   avatarText: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
   userName: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
   userEmail: { fontSize: 14, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
@@ -752,7 +915,13 @@ const createStyles = (colors: any) => StyleSheet.create({
   // Loyalty Card
   loyaltyCard: { backgroundColor: colors.surface, borderRadius: 20, padding: 24, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 4, borderWidth: 1, borderColor: `${colors.yellow}30` },
   loyaltyHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  loyaltyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  loyaltyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text, flex: 1 },
+  discountBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  discountText: { fontSize: 14, fontWeight: 'bold' },
+  ordersInfo: { marginBottom: 16, gap: 8 },
+  ordersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ordersLabel: { fontSize: 14, color: colors.textMuted },
+  ordersValue: { fontSize: 16, fontWeight: '600', color: colors.text },
   progressContainer: { marginBottom: 16 },
   progressBar: { height: 8, backgroundColor: `${colors.yellow}20`, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
   progressFill: { height: '100%', backgroundColor: colors.yellow, borderRadius: 4 },

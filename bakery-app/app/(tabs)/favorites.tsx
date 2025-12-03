@@ -11,6 +11,34 @@ import { useSettings } from '../../src/context/SettingsContext';
 
 type FilterType = 'all' | 'available' | 'unavailable';
 
+// Локальные изображения продуктов
+const PRODUCT_IMAGES: { [key: string]: any } = {
+  croissant: require('../../assets/products/круассан с шоколадом.jpg'),
+  cinnabon: require('../../assets/products/синнабон классический.jpg'),
+  almondCroissant: require('../../assets/products/круасан с мендалём.jpg'),
+  danish: require('../../assets/products/дасткая булочка.jpg'),
+  donut: require('../../assets/products/пончик глащзирвоанный.jpg'),
+  cinnamonBun: require('../../assets/products/ьбулочка с корицекй.jpg'),
+  napoleon: require('../../assets/products/наполеон классический.jpg'),
+  medovik: require('../../assets/products/медовик.jpg'),
+  redVelvet: require('../../assets/products/красный.png'),
+  cheesecake: require('../../assets/products/чизкейк нбю йорк.jpg'),
+  chocolateCake: require('../../assets/products/шоколадный торт.jpg'),
+  eclair: require('../../assets/products/эулер с кремом.jpg'),
+  macarons: require('../../assets/products/макаранос ассорти.jpg'),
+  tiramisu: require('../../assets/products/тирамису.jpg'),
+  profiterole: require('../../assets/products/профитроли.jpg'),
+  cupcake: require('../../assets/products/капкейк.jpg'),
+  baguette: require('../../assets/products/багет.jpg'),
+  ciabatta: require('../../assets/products/чиабатта.jpg'),
+  ryeBread: require('../../assets/products/хлеб рджаной.jpg'),
+  focaccia: require('../../assets/products/фокачча с размирином.jpg'),
+  berryTart: require('../../assets/products/тарт с яголами.jpg'),
+  pannaCotta: require('../../assets/products/панна котта.jpg'),
+  cremeBrulee: require('../../assets/products/крем брюле.jpg'),
+  strudel: require('../../assets/products/штрудель.jpg'),
+};
+
 export default function FavoritesScreen() {
   const router = useRouter();
   const { favorites, loading, isFavorite, toggleFavorite } = useFavorites();
@@ -40,7 +68,7 @@ export default function FavoritesScreen() {
 
   const handleAddToCart = (product: any) => {
     if (product.available === false) return;
-    addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url });
+    addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url || 'croissant' });
     showNotification({ title: `${product.name} добавлен в корзину`, type: 'success' });
   };
 
@@ -48,7 +76,7 @@ export default function FavoritesScreen() {
     const availableProducts = filteredProducts.filter((p) => p.available !== false);
     if (availableProducts.length === 0) return;
     availableProducts.forEach(product => {
-      addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url });
+      addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url || 'croissant' });
     });
     showNotification({ title: `${availableProducts.length} товаров добавлено`, type: 'success' });
   };
@@ -114,7 +142,7 @@ export default function FavoritesScreen() {
               {filteredProducts.map((product) => (
                 <View key={product.id} style={styles.productCard}>
                   <View style={styles.imageContainer}>
-                    <Image source={{ uri: product.image_url }} style={styles.productImage} resizeMode="cover" />
+                    <Image source={PRODUCT_IMAGES[product.image_url || ''] || PRODUCT_IMAGES.croissant} style={styles.productImage} resizeMode="cover" />
                     <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleFavorite(product)}>
                       <Ionicons name="heart" size={20} color={colors.red} />
                     </TouchableOpacity>

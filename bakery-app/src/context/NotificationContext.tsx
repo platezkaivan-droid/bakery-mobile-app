@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
+import { useSettings } from './SettingsContext';
 
 interface Notification {
   id: string;
@@ -11,17 +11,36 @@ interface Notification {
   duration?: number;
 }
 
+interface StoredNotification {
+  id: string;
+  type: 'order' | 'promo' | 'delivery' | 'bonus' | 'system';
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  image?: any;
+}
+
 interface NotificationContextType {
   notifications: Notification[];
+  storedNotifications: StoredNotification[];
+  unreadCount: number;
   showNotification: (notification: Omit<Notification, 'id'>) => void;
   hideNotification: (id: string) => void;
   clearAll: () => void;
+  addStoredNotification: (notification: Omit<StoredNotification, 'id' | 'time' | 'read'>) => void;
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  deleteStoredNotification: (id: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [storedNotifications, setStoredNotifications] = useState<StoredNotification[]>([]);
+
+  const unreadCount = storedNotifications.filter(n => !n.read).length;
 
   const showNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const id = Date.now().toString();
@@ -44,8 +63,48 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications([]);
   }, []);
 
+  const addStoredNotification = useCallback((notification: Omit<StoredNotification, 'id' | 'time' | 'read'>) => {
+    const id = Date.now().toString();
+    const now = new Date();
+    const time = 'Только что';
+    
+    const newNotification: StoredNotification = {
+      ...notification,
+      id,
+      time,
+      read: false,
+    };
+    
+    setStoredNotifications(prev => [newNotification, ...prev]);
+  }, []);
+
+  const markAsRead = useCallback((id: string) => {
+    setStoredNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    setStoredNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  const deleteStoredNotification = useCallback((id: string) => {
+    setStoredNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
   return (
-    <NotificationContext.Provider value={{ notifications, showNotification, hideNotification, clearAll }}>
+    <NotificationContext.Provider value={{ 
+      notifications, 
+      storedNotifications,
+      unreadCount,
+      showNotification, 
+      hideNotification, 
+      clearAll,
+      addStoredNotification,
+      markAsRead,
+      markAllAsRead,
+      deleteStoredNotification,
+    }}>
       {children}
       <NotificationContainer notifications={notifications} onHide={hideNotification} />
     </NotificationContext.Provider>
@@ -68,6 +127,9 @@ function NotificationContainer({
   notifications: Notification[]; 
   onHide: (id: string) => void;
 }) {
+  const { colors, isDark } = useSettings();
+  const styles = createDynamicStyles(colors, isDark);
+  
   if (notifications.length === 0) return null;
 
   return (
@@ -93,6 +155,7 @@ function NotificationItem({
   onHide: (id: string) => void;
   index: number;
 }) {
+  const { colors, isDark } = useSettings();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-100));
 
@@ -124,23 +187,25 @@ function NotificationItem({
 
   const getColor = () => {
     switch (notification.type) {
-      case 'success': return Colors.green;
-      case 'error': return Colors.red;
-      case 'warning': return Colors.yellow;
-      case 'info': return Colors.blue;
-      default: return Colors.primary;
+      case 'success': return colors.green;
+      case 'error': return colors.red;
+      case 'warning': return colors.yellow;
+      case 'info': return colors.blue;
+      default: return colors.primary;
     }
   };
 
   const getBgColor = () => {
     switch (notification.type) {
-      case 'success': return `${Colors.green}15`;
-      case 'error': return `${Colors.red}15`;
-      case 'warning': return `${Colors.yellow}15`;
-      case 'info': return `${Colors.blue}15`;
-      default: return `${Colors.primary}15`;
+      case 'success': return `${colors.green}15`;
+      case 'error': return `${colors.red}15`;
+      case 'warning': return `${colors.yellow}15`;
+      case 'info': return `${colors.blue}15`;
+      default: return `${colors.primary}15`;
     }
   };
+
+  const styles = createDynamicStyles(colors, isDark);
 
   return (
     <Animated.View 
@@ -166,13 +231,13 @@ function NotificationItem({
         style={styles.closeButton}
         onPress={() => onHide(notification.id)}
       >
-        <Ionicons name="close" size={20} color={Colors.textMuted} />
+        <Ionicons name="close" size={20} color={colors.textMuted} />
       </TouchableOpacity>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
+const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
@@ -181,7 +246,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   notification: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -189,7 +254,7 @@ const styles = StyleSheet.create({
     gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: isDark ? 0.3 : 0.15,
     shadowRadius: 24,
     elevation: 8,
   },
@@ -206,12 +271,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.text,
+    color: colors.text,
     marginBottom: 2,
   },
   message: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   closeButton: {
     width: 32,

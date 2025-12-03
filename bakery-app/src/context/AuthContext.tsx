@@ -49,25 +49,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Проверка текущей сессии
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
+    console.log('AuthContext: Initializing...');
+    
+    // Функция инициализации
+    const initializeAuth = async () => {
+      try {
+        console.log('AuthContext: Loading session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('AuthContext: Error loading session:', error);
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('AuthContext: Session found, loading profile...');
+          // Запускаем загрузку профиля, но НЕ ЖДЕМ её (без await),
+          // чтобы убрать спиннер сразу
+          loadProfile(session.user.id).catch(console.error);
+        } else {
+          console.log('AuthContext: No session found');
+        }
+      } catch (error) {
+        console.error('AuthContext: Error fetching session:', error);
+      } finally {
+        // ЭТО САМОЕ ГЛАВНОЕ: Убираем загрузку в любом случае!
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Подписка на изменения авторизации
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('AuthContext: Auth state changed:', _event);
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        await loadProfile(session.user.id);
+        console.log('AuthContext: New session, loading profile...');
+        loadProfile(session.user.id).catch(console.error);
       } else {
+        console.log('AuthContext: Session cleared');
         setProfile(null);
       }
+      
+      // При смене стейта (например, логин) тоже гасим спиннер
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

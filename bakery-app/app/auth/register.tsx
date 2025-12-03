@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useRootNavigationState } from 'expo-router';
 import { Colors } from '../../src/constants/colors';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -15,7 +15,21 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, session } = useAuth();
+  const navigationState = useRootNavigationState();
+
+  // Проверка: если пользователь уже авторизован, перенаправляем на главную
+  useEffect(() => {
+    // Ждем готовности навигации
+    if (!navigationState?.key) return;
+    
+    // Если есть сессия, перенаправляем
+    if (session) {
+      setTimeout(() => {
+        router.replace('/(tabs)/home');
+      }, 100);
+    }
+  }, [session, navigationState]);
 
   const handleRegister = async () => {
     console.log('Register button clicked!');

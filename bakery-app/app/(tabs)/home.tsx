@@ -9,6 +9,7 @@ import { useNotification } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { useDemoBonus } from '../../src/context/DemoBonusContext';
 import { useSettings } from '../../src/context/SettingsContext';
+import { useFavorites } from '../../src/context/FavoritesContext';
 
 interface Product {
   id: string;
@@ -24,7 +25,7 @@ interface Product {
   discount?: number;
 }
 
-// Локальные изображения продуктов
+// Локальные изображения продуктов (исправлены названия файлов)
 const PRODUCT_IMAGES: { [key: string]: any } = {
   croissant: require('../../assets/products/круассан с шоколадом.jpg'),
   cinnabon: require('../../assets/products/синнабон классический.jpg'),
@@ -52,32 +53,32 @@ const PRODUCT_IMAGES: { [key: string]: any } = {
   strudel: require('../../assets/products/штрудель.jpg'),
 };
 
-// Расширенный каталог товаров
+// Расширенный каталог товаров (UUID соответствуют БД Supabase)
 const PRODUCTS: Product[] = [
-  { id: '1', name: 'Круассан с шоколадом', description: 'Нежное слоёное тесто с бельгийским шоколадом', price: 189, oldPrice: 249, image: 'croissant', rating: 4.9, reviews: 128, category: 'Выпечка', discount: 24 },
-  { id: '2', name: 'Синнабон классический', description: 'Пышная булочка с корицей и сливочным кремом', price: 215, image: 'cinnabon', rating: 4.8, reviews: 256, category: 'Выпечка', isNew: true },
-  { id: '3', name: 'Круассан с миндалём', description: 'Хрустящий круассан с миндальным кремом', price: 225, image: 'almondCroissant', rating: 4.7, reviews: 89, category: 'Выпечка', isNew: true },
-  { id: '4', name: 'Датская булочка', description: 'Слоёная булочка с заварным кремом и ягодами', price: 195, oldPrice: 240, image: 'danish', rating: 4.6, reviews: 67, category: 'Выпечка', discount: 19 },
-  { id: '5', name: 'Пончик глазированный', description: 'Воздушный пончик с шоколадной глазурью', price: 120, image: 'donut', rating: 4.5, reviews: 312, category: 'Выпечка' },
-  { id: '6', name: 'Булочка с корицей', description: 'Ароматная булочка с корицей и изюмом', price: 145, image: 'cinnamonBun', rating: 4.8, reviews: 198, category: 'Выпечка' },
-  { id: '7', name: 'Наполеон классический', description: 'Многослойный торт с заварным кремом', price: 450, image: 'napoleon', rating: 4.9, reviews: 234, category: 'Торты', isNew: true },
-  { id: '8', name: 'Медовик', description: 'Нежные медовые коржи со сметанным кремом', price: 420, oldPrice: 520, image: 'medovik', rating: 4.8, reviews: 189, category: 'Торты', discount: 19 },
-  { id: '9', name: 'Красный бархат', description: 'Бисквит с кремом из маскарпоне', price: 550, image: 'redVelvet', rating: 5.0, reviews: 156, category: 'Торты' },
-  { id: '10', name: 'Чизкейк Нью-Йорк', description: 'Классический американский чизкейк', price: 380, image: 'cheesecake', rating: 4.9, reviews: 278, category: 'Торты' },
-  { id: '11', name: 'Шоколадный торт', description: 'Насыщенный шоколадный бисквит с ганашем', price: 490, image: 'chocolateCake', rating: 4.7, reviews: 145, category: 'Торты', isNew: true },
-  { id: '12', name: 'Эклер с кремом', description: 'Воздушное заварное тесто с ванильным кремом', price: 145, oldPrice: 180, image: 'eclair', rating: 4.7, reviews: 89, category: 'Пирожные', discount: 19 },
-  { id: '13', name: 'Макаронс ассорти', description: 'Набор из 6 французских макарон', price: 420, oldPrice: 520, image: 'macarons', rating: 5.0, reviews: 312, category: 'Пирожные', discount: 19 },
-  { id: '14', name: 'Тирамису', description: 'Итальянский десерт с кофе и маскарпоне', price: 340, image: 'tiramisu', rating: 4.8, reviews: 198, category: 'Пирожные' },
-  { id: '15', name: 'Профитроли', description: 'Заварные шарики с кремом и шоколадом', price: 280, image: 'profiterole', rating: 4.6, reviews: 134, category: 'Пирожные' },
-  { id: '16', name: 'Капкейк шоколадный', description: 'Мини-кекс с шоколадным кремом', price: 95, image: 'cupcake', rating: 4.5, reviews: 267, category: 'Пирожные' },
-  { id: '17', name: 'Багет французский', description: 'Хрустящая корочка, мягкий мякиш', price: 120, image: 'baguette', rating: 4.8, reviews: 456, category: 'Хлеб' },
-  { id: '18', name: 'Чиабатта', description: 'Итальянский хлеб с оливковым маслом', price: 140, image: 'ciabatta', rating: 4.7, reviews: 234, category: 'Хлеб' },
-  { id: '19', name: 'Хлеб ржаной', description: 'Ржаной хлеб с кориандром', price: 95, image: 'ryeBread', rating: 4.9, reviews: 567, category: 'Хлеб' },
-  { id: '20', name: 'Фокачча с розмарином', description: 'Итальянская лепёшка с травами', price: 180, image: 'focaccia', rating: 4.6, reviews: 123, category: 'Хлеб', isNew: true },
-  { id: '21', name: 'Тарт с ягодами', description: 'Песочное тесто со свежими ягодами', price: 295, image: 'berryTart', rating: 4.9, reviews: 175, category: 'Десерты', isNew: true },
-  { id: '22', name: 'Панна котта', description: 'Итальянский сливочный десерт', price: 220, image: 'pannaCotta', rating: 4.7, reviews: 98, category: 'Десерты' },
-  { id: '23', name: 'Крем-брюле', description: 'Французский десерт с карамельной корочкой', price: 260, image: 'cremeBrulee', rating: 4.8, reviews: 167, category: 'Десерты' },
-  { id: '24', name: 'Штрудель яблочный', description: 'Слоёное тесто с яблоками и корицей', price: 190, oldPrice: 240, image: 'strudel', rating: 4.6, reviews: 234, category: 'Десерты', discount: 21 },
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Круассан с шоколадом', description: 'Нежное слоёное тесто с бельгийским шоколадом', price: 189, oldPrice: 249, image: 'croissant', rating: 4.9, reviews: 128, category: 'Выпечка', discount: 24 },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Синнабон классический', description: 'Пышная булочка с корицей и сливочным кремом', price: 215, image: 'cinnabon', rating: 4.8, reviews: 256, category: 'Выпечка', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Круассан с миндалём', description: 'Хрустящий круассан с миндальным кремом', price: 225, image: 'almondCroissant', rating: 4.7, reviews: 89, category: 'Выпечка', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Датская булочка', description: 'Слоёная булочка с заварным кремом и ягодами', price: 195, oldPrice: 240, image: 'danish', rating: 4.6, reviews: 67, category: 'Выпечка', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000005', name: 'Пончик глазированный', description: 'Воздушный пончик с шоколадной глазурью', price: 120, image: 'donut', rating: 4.5, reviews: 312, category: 'Выпечка' },
+  { id: '00000000-0000-0000-0000-000000000006', name: 'Булочка с корицей', description: 'Ароматная булочка с корицей и изюмом', price: 145, image: 'cinnamonBun', rating: 4.8, reviews: 198, category: 'Выпечка' },
+  { id: '00000000-0000-0000-0000-000000000007', name: 'Наполеон классический', description: 'Многослойный торт с заварным кремом', price: 450, image: 'napoleon', rating: 4.9, reviews: 234, category: 'Торты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000008', name: 'Медовик', description: 'Нежные медовые коржи со сметанным кремом', price: 420, oldPrice: 520, image: 'medovik', rating: 4.8, reviews: 189, category: 'Торты', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000009', name: 'Красный бархат', description: 'Бисквит с кремом из маскарпоне', price: 550, image: 'redVelvet', rating: 5.0, reviews: 156, category: 'Торты' },
+  { id: '00000000-0000-0000-0000-000000000010', name: 'Чизкейк Нью-Йорк', description: 'Классический американский чизкейк', price: 380, image: 'cheesecake', rating: 4.9, reviews: 278, category: 'Торты' },
+  { id: '00000000-0000-0000-0000-000000000011', name: 'Шоколадный торт', description: 'Насыщенный шоколадный бисквит с ганашем', price: 490, image: 'chocolateCake', rating: 4.7, reviews: 145, category: 'Торты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000012', name: 'Эклер с кремом', description: 'Воздушное заварное тесто с ванильным кремом', price: 145, oldPrice: 180, image: 'eclair', rating: 4.7, reviews: 89, category: 'Пирожные', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000013', name: 'Макаронс ассорти', description: 'Набор из 6 французских макарон', price: 420, oldPrice: 520, image: 'macarons', rating: 5.0, reviews: 312, category: 'Пирожные', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000014', name: 'Тирамису', description: 'Итальянский десерт с кофе и маскарпоне', price: 340, image: 'tiramisu', rating: 4.8, reviews: 198, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000015', name: 'Профитроли', description: 'Заварные шарики с кремом и шоколадом', price: 280, image: 'profiterole', rating: 4.6, reviews: 134, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000016', name: 'Капкейк шоколадный', description: 'Мини-кекс с шоколадным кремом', price: 95, image: 'cupcake', rating: 4.5, reviews: 267, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000017', name: 'Багет французский', description: 'Хрустящая корочка, мягкий мякиш', price: 120, image: 'baguette', rating: 4.8, reviews: 456, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000018', name: 'Чиабатта', description: 'Итальянский хлеб с оливковым маслом', price: 140, image: 'ciabatta', rating: 4.7, reviews: 234, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000019', name: 'Хлеб ржаной', description: 'Ржаной хлеб с кориандром', price: 95, image: 'ryeBread', rating: 4.9, reviews: 567, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000020', name: 'Фокачча с розмарином', description: 'Итальянская лепёшка с травами', price: 180, image: 'focaccia', rating: 4.6, reviews: 123, category: 'Хлеб', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000021', name: 'Тарт с ягодами', description: 'Песочное тесто со свежими ягодами', price: 295, image: 'berryTart', rating: 4.9, reviews: 175, category: 'Десерты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000022', name: 'Панна котта', description: 'Итальянский сливочный десерт', price: 220, image: 'pannaCotta', rating: 4.7, reviews: 98, category: 'Десерты' },
+  { id: '00000000-0000-0000-0000-000000000023', name: 'Крем-брюле', description: 'Французский десерт с карамельной корочкой', price: 260, image: 'cremeBrulee', rating: 4.8, reviews: 167, category: 'Десерты' },
+  { id: '00000000-0000-0000-0000-000000000024', name: 'Штрудель яблочный', description: 'Слоёное тесто с яблоками и корицей', price: 190, oldPrice: 240, image: 'strudel', rating: 4.6, reviews: 234, category: 'Десерты', discount: 21 },
 ];
 
 const STORY_IMAGES = {
@@ -113,6 +114,8 @@ const STORIES = [
   { id: 'tips', label: 'Советы', icon: 'bulb', ...STORIES_CONTENT.tips },
 ];
 
+// Категории будут переведены через t() в компоненте
+const CATEGORIES_KEYS = ['home_all', 'home_bakery', 'home_cakes', 'home_pastries', 'home_bread', 'home_desserts'];
 const CATEGORIES = ['Все', 'Выпечка', 'Торты', 'Пирожные', 'Хлеб', 'Десерты'];
 
 export default function HomeScreen() {
@@ -122,10 +125,11 @@ export default function HomeScreen() {
   const [storyModal, setStoryModal] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
   const { addToCart, itemCount, setOnItemAdded } = useCart();
-  const { showNotification } = useNotification();
+  const { showNotification, unreadCount: unreadNotificationsCount } = useNotification();
   const { profile, user } = useAuth();
   const { demoBonusPoints } = useDemoBonus();
   const { colors, isDark, t } = useSettings();
+  const { isFavorite, toggleFavorite } = useFavorites();
   
   const bonusPoints = user ? (profile?.bonus_points || 0) : demoBonusPoints;
 
@@ -246,13 +250,40 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <LinearGradient colors={[colors.primary, '#8B4513']} style={styles.avatar}><Text style={styles.avatarText}>И</Text></LinearGradient>
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+            ) : (
+              <LinearGradient colors={[colors.primary, '#8B4513']} style={styles.avatar}>
+                <Text style={styles.avatarText}>{profile?.full_name?.charAt(0) || 'И'}</Text>
+              </LinearGradient>
+            )}
             <View style={styles.onlineIndicator} />
-            <View style={styles.greeting}><Text style={styles.greetingText}>Добрый день 👋</Text><Text style={styles.userName}>Иван</Text></View>
+            <View style={styles.greeting}>
+              <Text style={styles.greetingText}>Добрый день 👋</Text>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{profile?.full_name || 'Иван'}</Text>
+                {user ? (
+                  <View style={styles.authBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color={colors.green} />
+                    <Text style={styles.authBadgeText}>Авторизован</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.authBadge, styles.authBadgeGuest]}>
+                    <Ionicons name="person-outline" size={14} color={colors.textMuted} />
+                    <Text style={[styles.authBadgeText, styles.authBadgeTextGuest]}>{t('profile_guest')}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/notifications')}>
-              <Ionicons name="notifications-outline" size={24} color={colors.text} /><View style={styles.notificationDot} />
+              <Ionicons name="notifications-outline" size={24} color={colors.text} />
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>{unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/cart')}>
               <Ionicons name="cart-outline" size={24} color={colors.text} />
@@ -265,7 +296,7 @@ export default function HomeScreen() {
           <LinearGradient colors={[colors.primary, '#FF8552', '#D2691E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.promoCard}>
             <View style={styles.promoContent}>
               <View style={styles.promoIconContainer}><Ionicons name="gift" size={28} color="#fff" /></View>
-              <View><Text style={styles.promoLabel}>Ваши бонусы</Text><Text style={styles.promoValue}>{bonusPoints} баллов</Text></View>
+              <View><Text style={styles.promoLabel}>{t('home_your_bonus')}</Text><Text style={styles.promoValue}>{bonusPoints} {t('home_points')}</Text></View>
             </View>
             <Ionicons name="chevron-forward" size={28} color="rgba(255,255,255,0.9)" />
           </LinearGradient>
@@ -274,7 +305,7 @@ export default function HomeScreen() {
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color={colors.textMuted} />
-            <TextInput style={styles.searchInput} placeholder="Что будем искать?" placeholderTextColor={colors.textMuted} value={searchQuery} onChangeText={setSearchQuery} />
+            <TextInput style={styles.searchInput} placeholder={t('home_search_placeholder')} placeholderTextColor={colors.textMuted} value={searchQuery} onChangeText={setSearchQuery} />
             <TouchableOpacity style={styles.filterButton}><Ionicons name="options" size={20} color={colors.primary} /></TouchableOpacity>
           </View>
         </View>
@@ -291,16 +322,18 @@ export default function HomeScreen() {
         </ScrollView>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-          {CATEGORIES.map((category) => (
+          {CATEGORIES.map((category, index) => (
             <TouchableOpacity key={category} style={[styles.categoryButton, activeCategory === category && styles.categoryButtonActive]} onPress={() => setActiveCategory(category)}>
-              <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>{category}</Text>
+              <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
+                {t(CATEGORIES_KEYS[index] as any)}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         <View style={styles.productsHeader}>
-          <Text style={styles.productsTitle}>{activeCategory === 'Все' ? 'Все товары' : activeCategory}</Text>
-          <Text style={styles.productsCount}>{filteredProducts.length} товаров</Text>
+          <Text style={styles.productsTitle}>{activeCategory === t('home_all') ? 'Все товары' : activeCategory}</Text>
+          <Text style={styles.productsCount}>{filteredProducts.length} {t('cart_items')}</Text>
         </View>
 
         <View style={styles.productsGrid}>
@@ -310,6 +343,48 @@ export default function HomeScreen() {
                 <Image source={PRODUCT_IMAGES[product.image]} style={styles.productImage} resizeMode="contain" />
                 {product.isNew && <View style={styles.newBadge}><Text style={styles.newBadgeText}>NEW</Text></View>}
                 {product.discount && <View style={styles.discountBadge}><Text style={styles.discountBadgeText}>-{product.discount}%</Text></View>}
+                
+                {/* Кнопка избранного */}
+                <TouchableOpacity 
+                  style={styles.favoriteButton} 
+                  onPress={async () => {
+                    if (!user) {
+                      showNotification({
+                        type: 'error',
+                        title: 'Требуется авторизация',
+                        message: 'Войдите в аккаунт, чтобы добавлять товары в избранное',
+                        duration: 3000
+                      });
+                      return;
+                    }
+                    
+                    try {
+                      const wasFavorite = isFavorite(product.id);
+                      await toggleFavorite(product as any);
+                      showNotification({
+                        type: wasFavorite ? 'info' : 'success',
+                        title: wasFavorite ? 'Удалено из избранного' : 'Добавлено в избранное',
+                        message: product.name,
+                        duration: 2000
+                      });
+                    } catch (error: any) {
+                      console.error('Error toggling favorite:', error);
+                      showNotification({
+                        type: 'error',
+                        title: 'Ошибка',
+                        message: error.message || 'Не удалось добавить в избранное',
+                        duration: 3000
+                      });
+                    }
+                  }}
+                >
+                  <Ionicons 
+                    name={isFavorite(product.id) ? "heart" : "heart-outline"} 
+                    size={20} 
+                    color={isFavorite(product.id) ? colors.red : "#fff"} 
+                  />
+                </TouchableOpacity>
+                
                 <TouchableOpacity style={styles.addButtonOverlay} onPress={() => addToCart(product as any)}><Ionicons name="add" size={20} color="#fff" /></TouchableOpacity>
               </View>
               <View style={styles.productInfo}>
@@ -336,10 +411,16 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   onlineIndicator: { position: 'absolute', bottom: 0, left: 36, width: 14, height: 14, borderRadius: 7, backgroundColor: colors.green, borderWidth: 2, borderColor: colors.surface },
   greeting: { marginLeft: 4 },
   greetingText: { fontSize: 14, color: colors.textMuted },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   userName: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+  authBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: `${colors.green}15` },
+  authBadgeGuest: { backgroundColor: `${colors.textMuted}15` },
+  authBadgeText: { fontSize: 11, fontWeight: '600', color: colors.green },
+  authBadgeTextGuest: { color: colors.textMuted },
   headerRight: { flexDirection: 'row', gap: 8 },
   iconButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  notificationDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.red },
+  notificationBadge: { position: 'absolute', top: 6, right: 6, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  notificationBadgeText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   cartBadge: { position: 'absolute', top: 6, right: 6, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   cartBadgeText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
   promoCard: { marginHorizontal: 24, marginTop: 20, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -372,6 +453,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   newBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#fff' },
   discountBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: colors.red, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   discountBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#fff' },
+  favoriteButton: { position: 'absolute', top: 8, right: 8, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
   addButtonOverlay: { position: 'absolute', bottom: 8, right: 8, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   productInfo: { padding: 12 },
   productName: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 4 },

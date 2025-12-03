@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import { router, Link } from 'expo-router';
+import { router, Link, useRootNavigationState } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/context/AuthContext';
@@ -8,15 +8,20 @@ import { Colors } from '../src/constants/colors';
 
 export default function Index() {
   const { user, loading } = useAuth();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
+    // Проверяем, смонтирована ли навигация
+    if (!rootNavigationState?.key) return;
+    
     if (!loading && user) {
       // Если пользователь авторизован - перенаправляем на главную
       router.replace('/(tabs)/home');
     }
-  }, [user, loading]);
+  }, [user, loading, rootNavigationState?.key]);
 
-  if (loading) {
+  // Пока навигация не готова, показываем загрузку
+  if (!rootNavigationState?.key || loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.accent} />
@@ -81,13 +86,6 @@ export default function Index() {
               <Text style={styles.registerBtnText}>Создать аккаунт</Text>
             </TouchableOpacity>
           </Link>
-
-          <TouchableOpacity 
-            style={styles.guestBtn}
-            onPress={() => router.replace('/(tabs)/home')}
-          >
-            <Text style={styles.guestBtnText}>Продолжить как гость</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -103,7 +101,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: '#1A1A2E',
   },
   content: {
     flex: 1,
