@@ -9,11 +9,11 @@ import { useSettings } from '../src/context/SettingsContext';
 
 // Локальные изображения
 const IMAGES = {
-  croissant: require('../assets/products/круассан с шоколадом.jpg'),
-  tart: require('../assets/products/тарт с яголами.jpg'),
-  cinnabon: require('../assets/products/синнабон классический.jpg'),
-  macarons: require('../assets/products/макаранос ассорти.jpg'),
-  cheesecake: require('../assets/products/чизкейк нбю йорк.jpg'),
+  croissant: require('../assets/products/kruassan s chocaladom.jpg'),
+  tart: require('../assets/products/tart s yagodami.jpg'),
+  cinnabon: require('../assets/products/sinabon.jpg'),
+  macarons: require('../assets/products/makarons assorti.jpg'),
+  cheesecake: require('../assets/products/cheesecake new york.jpg'),
 };
 
 type NotificationType = 'order' | 'promo' | 'delivery' | 'bonus' | 'system';
