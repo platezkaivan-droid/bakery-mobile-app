@@ -142,7 +142,7 @@ export default function FavoritesScreen() {
               {filteredProducts.map((product) => (
                 <View key={product.id} style={styles.productCard}>
                   <View style={styles.imageContainer}>
-                    <Image source={PRODUCT_IMAGES[product.image_url || ''] || PRODUCT_IMAGES.croissant} style={styles.productImage} resizeMode="cover" />
+                    <Image source={PRODUCT_IMAGES[product.image] || PRODUCT_IMAGES.croissant} style={styles.productImage} resizeMode="cover" />
                     <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleFavorite(product)}>
                       <Ionicons name="heart" size={20} color={colors.red} />
                     </TouchableOpacity>

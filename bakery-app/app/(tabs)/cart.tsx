@@ -247,7 +247,7 @@ export default function CartTabScreen() {
       clearCart();
       setAppliedPromo(null);
       setUsePoints(false);
-      router.push('/(tabs)/orders');
+      router.push('/orders');
     } catch (error) {
       console.error('Error during checkout:', error);
       showNotification({
