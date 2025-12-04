@@ -121,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: fullName,
           phone: phone,
         },
+        // ✨ МАГИЯ: После подтверждения email откроется приложение!
+        emailRedirectTo: 'bakery-app://auth-callback',
       }
     });
     if (error) throw error;

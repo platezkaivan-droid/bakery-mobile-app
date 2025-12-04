@@ -58,10 +58,17 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       // Получаем product_id из результата
       const productIds = favoritesData.map(f => f.product_id);
 
-      // Теперь загружаем сами продукты
+      // Теперь загружаем сами продукты (включая переводы)
       const { data: productsData, error: prodError } = await supabase
         .from('products')
-        .select('id, name, description, price, image_url, rating, category_id')
+        .select(`
+          id, name, description, price, image_url, rating, category_id,
+          name_en, description_en,
+          name_kz, description_kz,
+          name_tt, description_tt,
+          name_uz, description_uz,
+          name_hy, description_hy
+        `)
         .in('id', productIds);
 
       if (prodError) {

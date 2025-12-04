@@ -18,6 +18,7 @@ import { useNotification } from '../../src/context/NotificationContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { useSettings } from '../../src/context/SettingsContext';
 import { supabase } from '../../src/lib/supabase';
+import { getLocalizedProduct } from '../../src/utils/getLocalizedProduct';
 
 type FilterTab = 'active' | 'history';
 type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'transit' | 'delivered' | 'cancelled';
@@ -110,7 +111,7 @@ export default function OrdersScreen() {
   const { addToCart } = useCart();
   const { showNotification } = useNotification();
   const { profile } = useAuth();
-  const { colors, isDark } = useSettings();
+  const { colors, isDark, language } = useSettings();
   
   const [activeTab, setActiveTab] = useState<FilterTab>('active');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -321,18 +322,38 @@ export default function OrdersScreen() {
     setShowRatingModal(true);
   };
 
-  const submitRating = () => {
+  const submitRating = async () => {
     if (ratingOrder && selectedRating > 0) {
-      setOrders(prev => prev.map(o => 
-        o.id === ratingOrder.id ? { ...o, rating: selectedRating } : o
-      ));
-      showNotification({ 
-        title: 'Спасибо за оценку!', 
-        message: `Вы поставили ${selectedRating} звёзд`,
-        type: 'success' 
-      });
-      setShowRatingModal(false);
-      setRatingOrder(null);
+      try {
+        // Сохраняем оценку в БД
+        const { error } = await supabase
+          .from('orders')
+          .update({ rating: selectedRating })
+          .eq('id', ratingOrder.id);
+
+        if (error) throw error;
+
+        // Обновляем локальное состояние
+        setOrders(prev => prev.map(o => 
+          o.id === ratingOrder.id ? { ...o, rating: selectedRating } : o
+        ));
+        
+        showNotification({ 
+          title: 'Спасибо за оценку!', 
+          message: `Вы поставили ${selectedRating} звёзд`,
+          type: 'success' 
+        });
+        
+        setShowRatingModal(false);
+        setRatingOrder(null);
+      } catch (error) {
+        console.error('Ошибка сохранения оценки:', error);
+        showNotification({ 
+          title: 'Ошибка', 
+          message: 'Не удалось сохранить оценку',
+          type: 'error' 
+        });
+      }
     }
   };
 
@@ -426,16 +447,19 @@ export default function OrdersScreen() {
               {/* Order Items */}
               <View style={styles.itemsSection}>
                 <Text style={styles.sectionTitle}>Состав заказа</Text>
-                {selectedOrder.items.map((item, index) => (
-                  <View key={index} style={styles.orderItem}>
-                    <Image source={item.image} style={styles.itemImage} />
-                    <View style={styles.itemInfo}>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <Text style={styles.itemQuantity}>{item.quantity} шт × {item.price}₽</Text>
+                {selectedOrder.items.map((item, index) => {
+                  const localizedItem = getLocalizedProduct(item, language);
+                  return (
+                    <View key={index} style={styles.orderItem}>
+                      <Image source={item.image} style={styles.itemImage} />
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemName}>{localizedItem.name}</Text>
+                        <Text style={styles.itemQuantity}>{item.quantity} шт × {item.price}₽</Text>
+                      </View>
+                      <Text style={styles.itemTotal}>{item.price * item.quantity}₽</Text>
                     </View>
-                    <Text style={styles.itemTotal}>{item.price * item.quantity}₽</Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
 
               {/* Price Breakdown */}

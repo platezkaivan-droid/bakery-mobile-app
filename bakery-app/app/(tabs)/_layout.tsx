@@ -4,7 +4,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { useSettings } from '../../src/context/SettingsContext';
 
 export default function TabLayout() {
-  const { isDark, colors } = useSettings();
+  const { isDark, colors, t } = useSettings();
   
   return (
     <Tabs
@@ -32,7 +32,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Главная',
+          title: t('nav_home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name={focused ? "home" : "home-outline"} size={22} color={color} />
@@ -43,7 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Корзина',
+          title: t('nav_cart'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name={focused ? "cart" : "cart-outline"} size={22} color={color} />
@@ -54,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Избранное',
+          title: t('nav_favorites'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name={focused ? "heart" : "heart-outline"} size={22} color={color} />
@@ -65,7 +65,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Заказы',
+          title: t('nav_orders'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name={focused ? "receipt" : "receipt-outline"} size={22} color={color} />
@@ -76,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Профиль',
+          title: t('nav_profile'),
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && { backgroundColor: colors.accent + '20' }]}>
               <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />

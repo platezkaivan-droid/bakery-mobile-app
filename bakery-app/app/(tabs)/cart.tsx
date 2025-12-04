@@ -10,6 +10,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useDemoBonus } from '../../src/context/DemoBonusContext';
 import { useSettings } from '../../src/context/SettingsContext';
 import { supabase } from '../../src/lib/supabase';
+import { getLocalizedProduct } from '../../src/utils/getLocalizedProduct';
 
 // Локальные изображения продуктов
 const PRODUCT_IMAGES: { [key: string]: any } = {
@@ -45,7 +46,7 @@ export default function CartTabScreen() {
   const { showNotification, addStoredNotification } = useNotification();
   const { user, profile, updateProfile } = useAuth();
   const { addDemoBonus } = useDemoBonus();
-  const { colors, isDark, t } = useSettings();
+  const { colors, isDark, t, language } = useSettings();
   
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(null);
@@ -327,9 +328,9 @@ export default function CartTabScreen() {
               />
               
               <View style={styles.itemInfo}>
-                <Text style={styles.itemName} numberOfLines={2}>{item.product.name}</Text>
+                <Text style={styles.itemName} numberOfLines={2}>{getLocalizedProduct(item.product, language).name}</Text>
                 <Text style={styles.itemDescription} numberOfLines={1}>
-                  {item.product.description || 'Свежая выпечка'}
+                  {getLocalizedProduct(item.product, language).description || 'Свежая выпечка'}
                 </Text>
                 <View style={styles.itemPriceRow}>
                   <Text style={styles.itemPrice}>{item.product.price}₽</Text>
@@ -360,7 +361,7 @@ export default function CartTabScreen() {
                 style={styles.deleteButton}
                 onPress={() => {
                   removeFromCart(item.product.id);
-                  showNotification({ type: 'info', title: 'Удалено', message: item.product.name });
+                  showNotification({ type: 'info', title: 'Удалено', message: getLocalizedProduct(item.product, language).name });
                 }}
               >
                 <Ionicons name="close" size={18} color={colors.textMuted} />
@@ -586,7 +587,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   quantityBtnPlus: { backgroundColor: colors.primary, borderColor: colors.primary },
   quantityText: { fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 32, textAlign: 'center' },
   itemTotal: { fontSize: 18, fontWeight: 'bold', color: colors.text },
-  deleteButton: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  deleteButton: { position: 'absolute', top: 12, left: 12, width: 32, height: 32, borderRadius: 16, backgroundColor: `${colors.red}15`, alignItems: 'center', justifyContent: 'center', zIndex: 10 },
 
   // Delivery Banner
   deliveryBanner: { marginHorizontal: 16, marginTop: 20, backgroundColor: colors.surface, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 2 },

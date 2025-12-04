@@ -46,7 +46,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const id = Date.now().toString();
     const newNotification = { ...notification, id };
     
-    setNotifications(prev => [...prev, newNotification]);
+    setNotifications(prev => {
+      // Проверяем, нет ли уже такого же уведомления (по title и message)
+      const isDuplicate = prev.some(n => 
+        n.title === notification.title && 
+        n.message === notification.message &&
+        n.type === notification.type
+      );
+      
+      if (isDuplicate) {
+        console.log('⚠️ Дубликат уведомления заблокирован:', notification.title);
+        return prev; // Не добавляем дубликат
+      }
+      
+      // Новое уведомление заменяет все предыдущие (показываем только одно)
+      return [newNotification];
+    });
 
     // Автоматически скрыть через duration (по умолчанию 3 секунды)
     const duration = notification.duration || 3000;
@@ -219,19 +234,19 @@ function NotificationItem({
       ]}
     >
       <View style={[styles.iconContainer, { backgroundColor: getBgColor() }]}>
-        <Ionicons name={getIcon()} size={24} color={getColor()} />
+        <Ionicons name={getIcon()} size={20} color={getColor()} />
       </View>
       <View style={styles.content}>
-        <Text style={styles.title}>{notification.title}</Text>
+        <Text style={styles.title} numberOfLines={1}>{notification.title}</Text>
         {notification.message && (
-          <Text style={styles.message}>{notification.message}</Text>
+          <Text style={styles.message} numberOfLines={1}>{notification.message}</Text>
         )}
       </View>
       <TouchableOpacity 
         style={styles.closeButton}
         onPress={() => onHide(notification.id)}
       >
-        <Ionicons name="close" size={20} color={colors.textMuted} />
+        <Ionicons name="close" size={18} color={colors.textMuted} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -240,28 +255,29 @@ function NotificationItem({
 const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
+    top: Platform.OS === 'ios' ? 50 : 30,
     left: 16,
     right: 16,
     zIndex: 9999,
   },
   notification: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: isDark ? 0.3 : 0.15,
-    shadowRadius: 24,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.25 : 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    maxHeight: 70,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -269,19 +285,20 @@ const createDynamicStyles = (colors: any, isDark: boolean) => StyleSheet.create(
     flex: 1,
   },
   title: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 2,
   },
   message: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
+    numberOfLines: 1,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

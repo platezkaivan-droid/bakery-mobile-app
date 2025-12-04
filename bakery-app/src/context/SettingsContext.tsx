@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Типы
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -55,6 +56,8 @@ export const translations = {
     nav_profile: 'Профиль',
     
     // Главная
+    home_greeting: 'Добрый день',
+    home_authorized: 'Авторизован',
     home_search_placeholder: 'Что будем искать?',
     home_your_bonus: 'Ваши бонусы',
     home_points: 'баллов',
@@ -64,6 +67,15 @@ export const translations = {
     home_pastries: 'Пирожные',
     home_bread: 'Хлеб',
     home_desserts: 'Десерты',
+    home_all_products: 'Все товары',
+    home_story_new: 'Новинки',
+    home_story_new_subtitle: 'Попробуйте первыми!',
+    home_story_sales: 'Акции',
+    home_story_sales_subtitle: 'Скидки до 25%!',
+    home_story_recipes: 'Рецепты',
+    home_story_recipes_subtitle: 'Готовьте дома',
+    home_story_tips: 'Советы',
+    home_story_tips_subtitle: 'Полезные лайфхаки',
     
     // Корзина
     cart_title: 'Корзина',
@@ -214,6 +226,24 @@ export const translations = {
     auth_have_account: 'Уже есть аккаунт?',
     auth_sign_up: 'Зарегистрироваться',
     auth_sign_in: 'Войти',
+    
+    // Советы
+    tip_store_bread: 'Как хранить хлеб',
+    tip_store_bread_text: 'Храните в бумажном пакете до 3 дней',
+    tip_fresh_pastry: 'Свежесть выпечки',
+    tip_fresh_pastry_text: 'Разогрейте в духовке при 180°C 3-5 мин',
+    
+    // Рецепты
+    recipe_homemade_bread: 'Домашний хлеб',
+    recipe_croissants: 'Круассаны',
+    recipe_time: 'Время',
+    recipe_difficulty: 'Сложность',
+    recipe_difficulty_easy: 'Легко',
+    recipe_difficulty_medium: 'Средне',
+    recipe_difficulty_hard: 'Сложно',
+    recipe_ingredients: 'Ингредиенты',
+    recipe_steps: 'Приготовление',
+    recipe_back: 'Назад к рецептам',
   },
   en: {
     // General
@@ -239,6 +269,8 @@ export const translations = {
     nav_profile: 'Profile',
     
     // Home
+    home_greeting: 'Good day',
+    home_authorized: 'Authorized',
     home_search_placeholder: 'What are you looking for?',
     home_your_bonus: 'Your bonus',
     home_points: 'points',
@@ -248,6 +280,15 @@ export const translations = {
     home_pastries: 'Pastries',
     home_bread: 'Bread',
     home_desserts: 'Desserts',
+    home_all_products: 'All products',
+    home_story_new: 'New',
+    home_story_new_subtitle: 'Try first!',
+    home_story_sales: 'Sales',
+    home_story_sales_subtitle: 'Up to 25% off!',
+    home_story_recipes: 'Recipes',
+    home_story_recipes_subtitle: 'Cook at home',
+    home_story_tips: 'Tips',
+    home_story_tips_subtitle: 'Useful lifehacks',
     
     // Cart
     cart_title: 'Cart',
@@ -395,6 +436,24 @@ export const translations = {
     auth_have_account: 'Already have an account?',
     auth_sign_up: 'Sign up',
     auth_sign_in: 'Sign in',
+    
+    // Tips
+    tip_store_bread: 'How to store bread',
+    tip_store_bread_text: 'Store in a paper bag for up to 3 days',
+    tip_fresh_pastry: 'Pastry freshness',
+    tip_fresh_pastry_text: 'Reheat in oven at 180°C for 3-5 min',
+    
+    // Recipes
+    recipe_homemade_bread: 'Homemade bread',
+    recipe_croissants: 'Croissants',
+    recipe_time: 'Time',
+    recipe_difficulty: 'Difficulty',
+    recipe_difficulty_easy: 'Easy',
+    recipe_difficulty_medium: 'Medium',
+    recipe_difficulty_hard: 'Hard',
+    recipe_ingredients: 'Ingredients',
+    recipe_steps: 'Preparation',
+    recipe_back: 'Back to recipes',
   },
   kz: {
     // Жалпы
@@ -420,6 +479,8 @@ export const translations = {
     nav_profile: 'Профиль',
     
     // Басты бет
+    home_greeting: 'Қайырлы күн',
+    home_authorized: 'Авторизацияланған',
     home_search_placeholder: 'Не іздейсіз?',
     home_your_bonus: 'Сіздің бонустарыңыз',
     home_points: 'ұпай',
@@ -429,6 +490,15 @@ export const translations = {
     home_pastries: 'Пирожныйлар',
     home_bread: 'Нан',
     home_desserts: 'Десерттер',
+    home_all_products: 'Барлық тауарлар',
+    home_story_new: 'Жаңалықтар',
+    home_story_new_subtitle: 'Алғашқы болып сынаңыз!',
+    home_story_sales: 'Акциялар',
+    home_story_sales_subtitle: '25%-ға дейін жеңілдік!',
+    home_story_recipes: 'Рецепттер',
+    home_story_recipes_subtitle: 'Үйде дайындаңыз',
+    home_story_tips: 'Кеңестер',
+    home_story_tips_subtitle: 'Пайдалы лайфхактар',
     
     // Себет
     cart_title: 'Себет',
@@ -564,6 +634,24 @@ export const translations = {
     auth_have_account: 'Аккаунтыңыз бар ма?',
     auth_sign_up: 'Тіркелу',
     auth_sign_in: 'Кіру',
+    
+    // Кеңестер
+    tip_store_bread: 'Нанды қалай сақтау керек',
+    tip_store_bread_text: 'Қағаз пакетте 3 күнге дейін сақтаңыз',
+    tip_fresh_pastry: 'Тоқаштың тазалығы',
+    tip_fresh_pastry_text: 'Пешке 180°C-та 3-5 минут қыздырыңыз',
+    
+    // Рецепттер
+    recipe_homemade_bread: 'Үй нанын',
+    recipe_croissants: 'Круассандар',
+    recipe_time: 'Уақыт',
+    recipe_difficulty: 'Қиындық',
+    recipe_difficulty_easy: 'Оңай',
+    recipe_difficulty_medium: 'Орташа',
+    recipe_difficulty_hard: 'Қиын',
+    recipe_ingredients: 'Ингредиенттер',
+    recipe_steps: 'Дайындау',
+    recipe_back: 'Рецепттерге оралу',
   },
   tt: {
     // Татарский
@@ -578,9 +666,30 @@ export const translations = {
     nav_favorites: 'Сайланганнар',
     nav_orders: 'Заказлар',
     nav_profile: 'Профиль',
+    home_greeting: 'Хәерле көн',
+    home_authorized: 'Авторизацияләнгән',
+    home_search_placeholder: 'Нәрсә эзлисез?',
+    home_your_bonus: 'Сезнең бонуслар',
+    home_points: 'балл',
+    home_all: 'Барлык',
+    home_bakery: 'Ипи',
+    home_cakes: 'Тортлар',
+    home_pastries: 'Пирожныйлар',
+    home_bread: 'Икмәк',
+    home_desserts: 'Десертлар',
+    home_all_products: 'Барлык товарлар',
+    home_story_new: 'Яңалыклар',
+    home_story_new_subtitle: 'Беренче булып сынагыз!',
+    home_story_sales: 'Акцияләр',
+    home_story_sales_subtitle: '25%-га кадәр ташлама!',
+    home_story_recipes: 'Рецептлар',
+    home_story_recipes_subtitle: 'Өйдә әзерләгез',
+    home_story_tips: 'Киңәшләр',
+    home_story_tips_subtitle: 'Файдалы лайфхаклар',
     cart_title: 'Кәрзин',
     cart_empty: 'Кәрзин буш',
     cart_checkout: 'Рәсмиләштерү',
+    cart_items: 'товар',
     favorites_title: 'Сайланганнар',
     orders_title: 'Минем заказлар',
     orders_active: 'Актив',
@@ -620,6 +729,24 @@ export const translations = {
     auth_email: 'Email',
     auth_password: 'Серсүз',
     auth_sign_in: 'Керү',
+    
+    // Киңәшләр
+    tip_store_bread: 'Икмәкне ничек саклау',
+    tip_store_bread_text: 'Кәгазь пакетта 3 көнгә кадәр саклагыз',
+    tip_fresh_pastry: 'Ипинең яңалыгы',
+    tip_fresh_pastry_text: 'Мичтә 180°C-та 3-5 минут җылытыгыз',
+    
+    // Рецептлар
+    recipe_homemade_bread: 'Өй икмәге',
+    recipe_croissants: 'Круассаннар',
+    recipe_time: 'Вакыт',
+    recipe_difficulty: 'Катлаулык',
+    recipe_difficulty_easy: 'Җиңел',
+    recipe_difficulty_medium: 'Уртача',
+    recipe_difficulty_hard: 'Катлаулы',
+    recipe_ingredients: 'Ингредиентлар',
+    recipe_steps: 'Әзерләү',
+    recipe_back: 'Рецептларга кайту',
   },
   uz: {
     // Узбекский
@@ -634,9 +761,30 @@ export const translations = {
     nav_favorites: 'Sevimlilar',
     nav_orders: 'Buyurtmalar',
     nav_profile: 'Profil',
+    home_greeting: 'Xayrli kun',
+    home_authorized: 'Avtorizatsiya qilingan',
+    home_search_placeholder: 'Nima qidiryapsiz?',
+    home_your_bonus: 'Sizning bonuslaringiz',
+    home_points: 'ball',
+    home_all: 'Hammasi',
+    home_bakery: 'Nonvoyxona',
+    home_cakes: 'Tortlar',
+    home_pastries: 'Pirojniylar',
+    home_bread: 'Non',
+    home_desserts: 'Desertlar',
+    home_all_products: 'Barcha mahsulotlar',
+    home_story_new: 'Yangiliklar',
+    home_story_new_subtitle: 'Birinchi bo\'lib sinab ko\'ring!',
+    home_story_sales: 'Aksiyalar',
+    home_story_sales_subtitle: '25% gacha chegirma!',
+    home_story_recipes: 'Retseptlar',
+    home_story_recipes_subtitle: 'Uyda tayyorlang',
+    home_story_tips: 'Maslahatlar',
+    home_story_tips_subtitle: 'Foydali layfxaklar',
     cart_title: 'Savat',
     cart_empty: 'Savat bo\'sh',
     cart_checkout: 'Rasmiylashtirish',
+    cart_items: 'mahsulot',
     favorites_title: 'Sevimlilar',
     orders_title: 'Mening buyurtmalarim',
     orders_active: 'Faol',
@@ -676,6 +824,24 @@ export const translations = {
     auth_email: 'Email',
     auth_password: 'Parol',
     auth_sign_in: 'Kirish',
+    
+    // Maslahatlar
+    tip_store_bread: 'Nonni qanday saqlash kerak',
+    tip_store_bread_text: 'Qog\'oz paketda 3 kungacha saqlang',
+    tip_fresh_pastry: 'Pishiriqning yangiligi',
+    tip_fresh_pastry_text: 'Duxovkada 180°C da 3-5 daqiqa isiting',
+    
+    // Retseptlar
+    recipe_homemade_bread: 'Uy noni',
+    recipe_croissants: 'Kruassanlar',
+    recipe_time: 'Vaqt',
+    recipe_difficulty: 'Qiyinlik',
+    recipe_difficulty_easy: 'Oson',
+    recipe_difficulty_medium: 'O\'rtacha',
+    recipe_difficulty_hard: 'Qiyin',
+    recipe_ingredients: 'Ingredientlar',
+    recipe_steps: 'Tayyorlash',
+    recipe_back: 'Retseptlarga qaytish',
   },
   hy: {
     // Армянский
@@ -690,9 +856,30 @@ export const translations = {
     nav_favorites: 'Ընտրյալներ',
     nav_orders: 'Պատվերներ',
     nav_profile: 'Պրոֆիլ',
+    home_greeting: 'Բարի օր',
+    home_authorized: 'Լիազորված',
+    home_search_placeholder: 'Ի՞նչ եք փնտրում',
+    home_your_bonus: 'Ձեր բոնուսները',
+    home_points: 'միավոր',
+    home_all: 'Բոլորը',
+    home_bakery: 'Հացաբուլկեղեն',
+    home_cakes: 'Տորթեր',
+    home_pastries: 'Թխվածքաբլիթներ',
+    home_bread: 'Հաց',
+    home_desserts: 'Աղանդեր',
+    home_all_products: 'Բոլոր ապրանքները',
+    home_story_new: 'Նորություններ',
+    home_story_new_subtitle: 'Փորձեք առաջինը!',
+    home_story_sales: 'Զեղչեր',
+    home_story_sales_subtitle: 'Մինչև 25% զեղչ!',
+    home_story_recipes: 'Բաղադրատոմսեր',
+    home_story_recipes_subtitle: 'Պատրաստեք տանը',
+    home_story_tips: 'Խորհուրդներ',
+    home_story_tips_subtitle: 'Օգտակար խորհուրդներ',
     cart_title: 'Զամբյուղ',
     cart_empty: 'Զամբյուղը դատարկ է',
     cart_checkout: 'Ձևակերպել',
+    cart_items: 'ապրանք',
     favorites_title: 'Ընտրյալներ',
     orders_title: 'Իմ պատվերները',
     orders_active: 'Ակտիվ',
@@ -732,6 +919,24 @@ export const translations = {
     auth_email: 'Email',
     auth_password: 'Գաղտնաբառ',
     auth_sign_in: 'Մուտք',
+    
+    // Խորհուրդներ
+    tip_store_bread: 'Ինչպես պահել հացը',
+    tip_store_bread_text: 'Պահեք թղթե տոպրակում մինչև 3 օր',
+    tip_fresh_pastry: 'Թխվածքի թարմություն',
+    tip_fresh_pastry_text: 'Տաքացրեք վառարանում 180°C-ում 3-5 րոպե',
+    
+    // Բաղադրատոմսեր
+    recipe_homemade_bread: 'Տնական հաց',
+    recipe_croissants: 'Կրուասաններ',
+    recipe_time: 'Ժամանակ',
+    recipe_difficulty: 'Բարդություն',
+    recipe_difficulty_easy: 'Հեշտ',
+    recipe_difficulty_medium: 'Միջին',
+    recipe_difficulty_hard: 'Բարդ',
+    recipe_ingredients: 'Բաղադրիչներ',
+    recipe_steps: 'Պատրաստում',
+    recipe_back: 'Վերադառնալ բաղադրատոմսերին',
   },
 };
 
@@ -815,10 +1020,42 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   const [language, setLanguage] = useState<Language>('ru');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isLanguageLoaded, setIsLanguageLoaded] = useState(false);
   
   const [addresses, setAddresses] = useState<Address[]>([]);
   
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+
+  // Загрузка языка из AsyncStorage при монтировании
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem('app_language');
+        console.log('📖 Загружен язык из AsyncStorage:', savedLanguage);
+        if (savedLanguage && ['ru', 'en', 'kz', 'tt', 'uz', 'hy'].includes(savedLanguage)) {
+          setLanguage(savedLanguage as Language);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка загрузки языка:', error);
+      } finally {
+        setIsLanguageLoaded(true);
+      }
+    };
+    loadLanguage();
+  }, []);
+
+  // Сохранение языка в AsyncStorage при изменении
+  const handleSetLanguage = async (lang: Language) => {
+    console.log('💾 Сохраняем язык:', lang);
+    try {
+      await AsyncStorage.setItem('app_language', lang);
+      setLanguage(lang);
+      console.log('✅ Язык сохранён успешно');
+    } catch (error) {
+      console.error('❌ Ошибка сохранения языка:', error);
+      setLanguage(lang); // Устанавливаем даже если не удалось сохранить
+    }
+  };
 
   // Определяем текущую тему
   const isDark = themeMode === 'dark' || (themeMode === 'system' && systemColorScheme === 'dark');
@@ -889,7 +1126,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       isDark,
       colors,
       language,
-      setLanguage,
+      setLanguage: handleSetLanguage,
       t,
       addresses,
       addAddress,

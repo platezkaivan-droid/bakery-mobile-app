@@ -23,7 +23,20 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3D2314"
       },
-      "package": "com.bakery.pavlova"
+      "package": "com.bakery.pavlova",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "bakery-app",
+              "host": "auth-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {},
     "scheme": "bakery-app",

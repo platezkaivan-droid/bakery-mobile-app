@@ -575,7 +575,7 @@ export default function ProfileScreen() {
             { id: 'ru', name: t('language_ru'), flag: '🇷🇺' },
             { id: 'en', name: t('language_en'), flag: '🇬🇧' },
             { id: 'kz', name: t('language_kz'), flag: '🇰🇿' },
-            { id: 'tt', name: t('language_tt'), flag: '🏴' },
+            { id: 'tt', name: t('language_tt'), flag: '🇷🇺' },
             { id: 'uz', name: t('language_uz'), flag: '🇺🇿' },
             { id: 'hy', name: t('language_hy'), flag: '🇦🇲' },
           ] as const).map(lang => (
@@ -839,7 +839,14 @@ export default function ProfileScreen() {
                 <Text style={styles.menuItemText}>{t('menu_language')}</Text>
               </View>
               <View style={styles.menuItemRight}>
-                <Text style={styles.menuItemValue}>{language === 'ru' ? '🇷🇺' : language === 'en' ? '🇬🇧' : '🇰🇿'}</Text>
+                <Text style={styles.menuItemValue}>
+                  {language === 'ru' ? '🇷🇺' : 
+                   language === 'en' ? '🇬🇧' : 
+                   language === 'kz' ? '🇰🇿' :
+                   language === 'tt' ? '🇷🇺' :
+                   language === 'uz' ? '🇺🇿' :
+                   language === 'hy' ? '🇦🇲' : '🇷🇺'}
+                </Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </View>
             </TouchableOpacity>

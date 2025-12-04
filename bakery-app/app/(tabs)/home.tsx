@@ -10,11 +10,22 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useDemoBonus } from '../../src/context/DemoBonusContext';
 import { useSettings } from '../../src/context/SettingsContext';
 import { useFavorites } from '../../src/context/FavoritesContext';
+import { getLocalizedProduct } from '../../src/utils/getLocalizedProduct';
 
 interface Product {
   id: string;
   name: string;
   description: string;
+  name_en?: string;
+  description_en?: string;
+  name_kz?: string;
+  description_kz?: string;
+  name_uz?: string;
+  description_uz?: string;
+  name_tt?: string;
+  description_tt?: string;
+  name_hy?: string;
+  description_hy?: string;
   price: number;
   oldPrice?: number;
   image: string;
@@ -55,30 +66,30 @@ const PRODUCT_IMAGES: { [key: string]: any } = {
 
 // Расширенный каталог товаров (UUID соответствуют БД Supabase)
 const PRODUCTS: Product[] = [
-  { id: '00000000-0000-0000-0000-000000000001', name: 'Круассан с шоколадом', description: 'Нежное слоёное тесто с бельгийским шоколадом', price: 189, oldPrice: 249, image: 'croissant', rating: 4.9, reviews: 128, category: 'Выпечка', discount: 24 },
-  { id: '00000000-0000-0000-0000-000000000002', name: 'Синнабон классический', description: 'Пышная булочка с корицей и сливочным кремом', price: 215, image: 'cinnabon', rating: 4.8, reviews: 256, category: 'Выпечка', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000003', name: 'Круассан с миндалём', description: 'Хрустящий круассан с миндальным кремом', price: 225, image: 'almondCroissant', rating: 4.7, reviews: 89, category: 'Выпечка', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Датская булочка', description: 'Слоёная булочка с заварным кремом и ягодами', price: 195, oldPrice: 240, image: 'danish', rating: 4.6, reviews: 67, category: 'Выпечка', discount: 19 },
-  { id: '00000000-0000-0000-0000-000000000005', name: 'Пончик глазированный', description: 'Воздушный пончик с шоколадной глазурью', price: 120, image: 'donut', rating: 4.5, reviews: 312, category: 'Выпечка' },
-  { id: '00000000-0000-0000-0000-000000000006', name: 'Булочка с корицей', description: 'Ароматная булочка с корицей и изюмом', price: 145, image: 'cinnamonBun', rating: 4.8, reviews: 198, category: 'Выпечка' },
-  { id: '00000000-0000-0000-0000-000000000007', name: 'Наполеон классический', description: 'Многослойный торт с заварным кремом', price: 450, image: 'napoleon', rating: 4.9, reviews: 234, category: 'Торты', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000008', name: 'Медовик', description: 'Нежные медовые коржи со сметанным кремом', price: 420, oldPrice: 520, image: 'medovik', rating: 4.8, reviews: 189, category: 'Торты', discount: 19 },
-  { id: '00000000-0000-0000-0000-000000000009', name: 'Красный бархат', description: 'Бисквит с кремом из маскарпоне', price: 550, image: 'redVelvet', rating: 5.0, reviews: 156, category: 'Торты' },
-  { id: '00000000-0000-0000-0000-000000000010', name: 'Чизкейк Нью-Йорк', description: 'Классический американский чизкейк', price: 380, image: 'cheesecake', rating: 4.9, reviews: 278, category: 'Торты' },
-  { id: '00000000-0000-0000-0000-000000000011', name: 'Шоколадный торт', description: 'Насыщенный шоколадный бисквит с ганашем', price: 490, image: 'chocolateCake', rating: 4.7, reviews: 145, category: 'Торты', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000012', name: 'Эклер с кремом', description: 'Воздушное заварное тесто с ванильным кремом', price: 145, oldPrice: 180, image: 'eclair', rating: 4.7, reviews: 89, category: 'Пирожные', discount: 19 },
-  { id: '00000000-0000-0000-0000-000000000013', name: 'Макаронс ассорти', description: 'Набор из 6 французских макарон', price: 420, oldPrice: 520, image: 'macarons', rating: 5.0, reviews: 312, category: 'Пирожные', discount: 19 },
-  { id: '00000000-0000-0000-0000-000000000014', name: 'Тирамису', description: 'Итальянский десерт с кофе и маскарпоне', price: 340, image: 'tiramisu', rating: 4.8, reviews: 198, category: 'Пирожные' },
-  { id: '00000000-0000-0000-0000-000000000015', name: 'Профитроли', description: 'Заварные шарики с кремом и шоколадом', price: 280, image: 'profiterole', rating: 4.6, reviews: 134, category: 'Пирожные' },
-  { id: '00000000-0000-0000-0000-000000000016', name: 'Капкейк шоколадный', description: 'Мини-кекс с шоколадным кремом', price: 95, image: 'cupcake', rating: 4.5, reviews: 267, category: 'Пирожные' },
-  { id: '00000000-0000-0000-0000-000000000017', name: 'Багет французский', description: 'Хрустящая корочка, мягкий мякиш', price: 120, image: 'baguette', rating: 4.8, reviews: 456, category: 'Хлеб' },
-  { id: '00000000-0000-0000-0000-000000000018', name: 'Чиабатта', description: 'Итальянский хлеб с оливковым маслом', price: 140, image: 'ciabatta', rating: 4.7, reviews: 234, category: 'Хлеб' },
-  { id: '00000000-0000-0000-0000-000000000019', name: 'Хлеб ржаной', description: 'Ржаной хлеб с кориандром', price: 95, image: 'ryeBread', rating: 4.9, reviews: 567, category: 'Хлеб' },
-  { id: '00000000-0000-0000-0000-000000000020', name: 'Фокачча с розмарином', description: 'Итальянская лепёшка с травами', price: 180, image: 'focaccia', rating: 4.6, reviews: 123, category: 'Хлеб', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000021', name: 'Тарт с ягодами', description: 'Песочное тесто со свежими ягодами', price: 295, image: 'berryTart', rating: 4.9, reviews: 175, category: 'Десерты', isNew: true },
-  { id: '00000000-0000-0000-0000-000000000022', name: 'Панна котта', description: 'Итальянский сливочный десерт', price: 220, image: 'pannaCotta', rating: 4.7, reviews: 98, category: 'Десерты' },
-  { id: '00000000-0000-0000-0000-000000000023', name: 'Крем-брюле', description: 'Французский десерт с карамельной корочкой', price: 260, image: 'cremeBrulee', rating: 4.8, reviews: 167, category: 'Десерты' },
-  { id: '00000000-0000-0000-0000-000000000024', name: 'Штрудель яблочный', description: 'Слоёное тесто с яблоками и корицей', price: 190, oldPrice: 240, image: 'strudel', rating: 4.6, reviews: 234, category: 'Десерты', discount: 21 },
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Круассан с шоколадом', description: 'Нежное слоёное тесто с бельгийским шоколадом', name_en: 'Chocolate Croissant', description_en: 'Tender puff pastry with Belgian chocolate', name_kz: 'Шоколадты круассан', description_kz: 'Бельгиялық шоколадты нәзік қабатты қамыр', name_tt: 'Шоколадлы круассан', description_tt: 'Бельгия шоколады белән нәзек катламалы камыр', name_uz: 'Shokoladli kruassan', description_uz: 'Belgiya shokoladi bilan yumshoq qatlamli xamir', name_hy: 'Շոկոլադե կրուասան', description_hy: 'Նուրբ շերտավոր խմոր բելգիական շոկոլադով', price: 189, oldPrice: 249, image: 'croissant', rating: 4.9, reviews: 128, category: 'Выпечка', discount: 24 },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Синнабон классический', description: 'Пышная булочка с корицей и сливочным кремом', name_en: 'Classic Cinnamon Roll', description_en: 'Fluffy cinnamon roll with cream cheese frosting', name_kz: 'Классикалық дарқұрама бұлкасы', description_kz: 'Кілегей кремі бар дарқұрама бұлкасы', name_tt: 'Классик дарчин булкасы', description_tt: 'Кремлы дарчин булкасы', name_uz: 'Klassik doljin bulkasi', description_uz: 'Kremli doljin bulkasi', name_hy: 'Դասական դարչնով բուլկա', description_hy: 'Փափուկ դարչնով բուլկա կրեմով', price: 215, image: 'cinnabon', rating: 4.8, reviews: 256, category: 'Выпечка', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Круассан с миндалём', description: 'Хрустящий круассан с миндальным кремом', name_en: 'Almond Croissant', description_en: 'Crispy croissant with almond cream', name_kz: 'Бадамды круассан', description_kz: 'Бадам кремі бар қытырлақ круассан', name_tt: 'Бадам круассаны', description_tt: 'Бадам кремы белән хрустящий круассан', name_uz: 'Bodomli kruassan', description_uz: 'Bodom kremi bilan qarsildoq kruassan', name_hy: 'Նուշով կրուասան', description_hy: 'Խրթխրթան կրուասան նշային կրեմով', price: 225, image: 'almondCroissant', rating: 4.7, reviews: 89, category: 'Выпечка', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Датская булочка', description: 'Слоёная булочка с заварным кремом и ягодами', name_en: 'Danish Pastry', description_en: 'Layered pastry with custard and berries', name_kz: 'Дат тоқашы', description_kz: 'Заварлы крем және жидектері бар қабатты тоқаш', name_uz: 'Daniya bulkasi', description_uz: 'Krem va rezavorlar bilan qatlamli bulka', price: 195, oldPrice: 240, image: 'danish', rating: 4.6, reviews: 67, category: 'Выпечка', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000005', name: 'Пончик глазированный', description: 'Воздушный пончик с шоколадной глазурью', name_en: 'Glazed Donut', description_en: 'Fluffy donut with chocolate glaze', name_kz: 'Глазурьланған пончик', description_kz: 'Шоколад глазурьмен әуе пончик', name_uz: 'Glazurli ponchik', description_uz: 'Shokolad glazur bilan havo ponchik', price: 120, image: 'donut', rating: 4.5, reviews: 312, category: 'Выпечка' },
+  { id: '00000000-0000-0000-0000-000000000006', name: 'Булочка с корицей', description: 'Ароматная булочка с корицей и изюмом', name_en: 'Cinnamon Bun', description_en: 'Aromatic bun with cinnamon and raisins', name_kz: 'Дарқұрама бұлкасы', description_kz: 'Дарқұрама және кішміш бар хош иісті бұлка', name_uz: 'Doljinli bulka', description_uz: 'Doljin va mayiz bilan xushbo\'y bulka', price: 145, image: 'cinnamonBun', rating: 4.8, reviews: 198, category: 'Выпечка' },
+  { id: '00000000-0000-0000-0000-000000000007', name: 'Наполеон классический', description: 'Многослойный торт с заварным кремом', name_en: 'Napoleon Cake', description_en: 'Multi-layered cake with custard cream', name_kz: 'Классикалық Наполеон', description_kz: 'Заварлы кремі бар көп қабатты торт', name_uz: 'Klassik Napoleon', description_uz: 'Zavarlangan krem bilan ko\'p qatlamli tort', price: 450, image: 'napoleon', rating: 4.9, reviews: 234, category: 'Торты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000008', name: 'Медовик', description: 'Нежные медовые коржи со сметанным кремом', name_en: 'Honey Cake', description_en: 'Tender honey layers with sour cream', name_kz: 'Балды торт', description_kz: 'Қаймақ кремі бар нәзік балды қабаттар', name_uz: 'Asal torti', description_uz: 'Qaymoq kremi bilan yumshoq asal qatlamlari', price: 420, oldPrice: 520, image: 'medovik', rating: 4.8, reviews: 189, category: 'Торты', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000009', name: 'Красный бархат', description: 'Бисквит с кремом из маскарпоне', name_en: 'Red Velvet Cake', description_en: 'Sponge cake with mascarpone cream', name_kz: 'Қызыл бархат', description_kz: 'Маскарпоне кремі бар бисквит', name_uz: 'Qizil baxmal', description_uz: 'Maskarpone kremi bilan biskvit', price: 550, image: 'redVelvet', rating: 5.0, reviews: 156, category: 'Торты' },
+  { id: '00000000-0000-0000-0000-000000000010', name: 'Чизкейк Нью-Йорк', description: 'Классический американский чизкейк', name_en: 'New York Cheesecake', description_en: 'Classic American cheesecake', name_kz: 'Нью-Йорк чизкейгі', description_kz: 'Классикалық американдық чизкейк', name_uz: 'Nyu-York chizkeyki', description_uz: 'Klassik amerika chizkeyki', price: 380, image: 'cheesecake', rating: 4.9, reviews: 278, category: 'Торты' },
+  { id: '00000000-0000-0000-0000-000000000011', name: 'Шоколадный торт', description: 'Насыщенный шоколадный бисквит с ганашем', name_en: 'Chocolate Cake', description_en: 'Rich chocolate sponge with ganache', name_kz: 'Шоколадты торт', description_kz: 'Ганаш бар қанық шоколадты бисквит', name_uz: 'Shokoladli tort', description_uz: 'Ganash bilan to\'yingan shokoladli biskvit', price: 490, image: 'chocolateCake', rating: 4.7, reviews: 145, category: 'Торты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000012', name: 'Эклер с кремом', description: 'Воздушное заварное тесто с ванильным кремом', name_en: 'Cream Eclair', description_en: 'Airy choux pastry with vanilla cream', name_kz: 'Кремді эклер', description_kz: 'Ванильді кремі бар әуе заварлы қамыр', name_uz: 'Kremli ekler', description_uz: 'Vanil kremi bilan havo zavarlangan xamir', price: 145, oldPrice: 180, image: 'eclair', rating: 4.7, reviews: 89, category: 'Пирожные', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000013', name: 'Макаронс ассорти', description: 'Набор из 6 французских макарон', name_en: 'Macarons Assorted', description_en: 'Set of 6 French macarons', name_kz: 'Макарон әртүрлі', description_kz: '6 француз макаронының жинағы', name_uz: 'Makaron turli xil', description_uz: '6 ta frantsuz makaronlari to\'plami', price: 420, oldPrice: 520, image: 'macarons', rating: 5.0, reviews: 312, category: 'Пирожные', discount: 19 },
+  { id: '00000000-0000-0000-0000-000000000014', name: 'Тирамису', description: 'Итальянский десерт с кофе и маскарпоне', name_en: 'Tiramisu', description_en: 'Italian dessert with coffee and mascarpone', name_kz: 'Тирамису', description_kz: 'Кофе және маскарпоне бар итальян десерті', name_uz: 'Tiramisu', description_uz: 'Kofe va maskarpone bilan italyan deserti', price: 340, image: 'tiramisu', rating: 4.8, reviews: 198, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000015', name: 'Профитроли', description: 'Заварные шарики с кремом и шоколадом', name_en: 'Profiteroles', description_en: 'Choux balls with cream and chocolate', name_kz: 'Профитроль', description_kz: 'Крем және шоколад бар заварлы шарлар', name_uz: 'Profitrol', description_uz: 'Krem va shokolad bilan zavarlangan sharlar', price: 280, image: 'profiterole', rating: 4.6, reviews: 134, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000016', name: 'Капкейк шоколадный', description: 'Мини-кекс с шоколадным кремом', name_en: 'Chocolate Cupcake', description_en: 'Mini cake with chocolate cream', name_kz: 'Шоколадты капкейк', description_kz: 'Шоколадты кремі бар мини-кекс', name_uz: 'Shokoladli kapkeyk', description_uz: 'Shokoladli krem bilan mini-keks', price: 95, image: 'cupcake', rating: 4.5, reviews: 267, category: 'Пирожные' },
+  { id: '00000000-0000-0000-0000-000000000017', name: 'Багет французский', description: 'Хрустящая корочка, мягкий мякиш', name_en: 'French Baguette', description_en: 'Crispy crust, soft crumb', name_kz: 'Француз багеті', description_kz: 'Қытырлақ қабығы, жұмсақ ішкі бөлігі', name_uz: 'Frantsuz bageti', description_uz: 'Qarsildoq qobig\'i, yumshoq ichi', price: 120, image: 'baguette', rating: 4.8, reviews: 456, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000018', name: 'Чиабатта', description: 'Итальянский хлеб с оливковым маслом', name_en: 'Ciabatta', description_en: 'Italian bread with olive oil', name_kz: 'Чиабатта', description_kz: 'Зәйтүн майы бар итальян нан', name_uz: 'Chiabatta', description_uz: 'Zaytun moyi bilan italyan noni', price: 140, image: 'ciabatta', rating: 4.7, reviews: 234, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000019', name: 'Хлеб ржаной', description: 'Ржаной хлеб с кориандром', name_en: 'Rye Bread', description_en: 'Rye bread with coriander', name_kz: 'Қарабидай нан', description_kz: 'Кинза бар қарабидай нан', name_uz: 'Javdar noni', description_uz: 'Kashnich bilan javdar noni', price: 95, image: 'ryeBread', rating: 4.9, reviews: 567, category: 'Хлеб' },
+  { id: '00000000-0000-0000-0000-000000000020', name: 'Фокачча с розмарином', description: 'Итальянская лепёшка с травами', name_en: 'Rosemary Focaccia', description_en: 'Italian flatbread with herbs', name_kz: 'Розмаринді фокачча', description_kz: 'Шөптері бар итальян лепешкасы', name_uz: 'Rozmarin bilan fokachcha', description_uz: 'O\'tlar bilan italyan lepyoshkasi', price: 180, image: 'focaccia', rating: 4.6, reviews: 123, category: 'Хлеб', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000021', name: 'Тарт с ягодами', description: 'Песочное тесто со свежими ягодами', name_en: 'Berry Tart', description_en: 'Shortcrust pastry with fresh berries', name_kz: 'Жидекті тарт', description_kz: 'Жаңа жидектері бар құмды қамыр', name_uz: 'Rezavorli tart', description_uz: 'Yangi rezavorlar bilan qumli xamir', price: 295, image: 'berryTart', rating: 4.9, reviews: 175, category: 'Десерты', isNew: true },
+  { id: '00000000-0000-0000-0000-000000000022', name: 'Панна котта', description: 'Итальянский сливочный десерт', name_en: 'Panna Cotta', description_en: 'Italian cream dessert', name_kz: 'Панна котта', description_kz: 'Итальян кілегей десерті', name_uz: 'Panna kotta', description_uz: 'Italyan kremli desert', price: 220, image: 'pannaCotta', rating: 4.7, reviews: 98, category: 'Десерты' },
+  { id: '00000000-0000-0000-0000-000000000023', name: 'Крем-брюле', description: 'Французский десерт с карамельной корочкой', name_en: 'Creme Brulee', description_en: 'French dessert with caramel crust', name_kz: 'Крем-брюле', description_kz: 'Карамельді қабығы бар француз десерті', name_uz: 'Krem-bryule', description_uz: 'Karamel qobig\'i bilan frantsuz deserti', price: 260, image: 'cremeBrulee', rating: 4.8, reviews: 167, category: 'Десерты' },
+  { id: '00000000-0000-0000-0000-000000000024', name: 'Штрудель яблочный', description: 'Слоёное тесто с яблоками и корицей', name_en: 'Apple Strudel', description_en: 'Puff pastry with apples and cinnamon', name_kz: 'Алмалы штрудель', description_kz: 'Алма және дарқұрама бар қабатты қамыр', name_uz: 'Olma shtrudeli', description_uz: 'Olma va doljin bilan qatlamli xamir', price: 190, oldPrice: 240, image: 'strudel', rating: 4.6, reviews: 234, category: 'Десерты', discount: 21 },
 ];
 
 const STORY_IMAGES = {
@@ -89,29 +100,30 @@ const STORY_IMAGES = {
 };
 
 const STORIES_CONTENT = {
-  new: { title: 'Новинки', subtitle: 'Попробуйте первыми!', items: PRODUCTS.filter(p => p.isNew), gradient: ['#FF6B35', '#FF8552', '#FFB347'], headerImage: STORY_IMAGES.new },
-  sales: { title: 'Акции', subtitle: 'Скидки до 25%!', items: PRODUCTS.filter(p => p.discount), gradient: ['#667eea', '#764ba2', '#f093fb'], headerImage: STORY_IMAGES.sales },
+  new: { items: PRODUCTS.filter(p => p.isNew), gradient: ['#FF6B35', '#FF8552', '#FFB347'], headerImage: STORY_IMAGES.new },
+  sales: { items: PRODUCTS.filter(p => p.discount), gradient: ['#667eea', '#764ba2', '#f093fb'], headerImage: STORY_IMAGES.sales },
   recipes: {
-    title: 'Рецепты', subtitle: 'Готовьте дома', gradient: ['#f093fb', '#f5576c', '#FF6B35'], headerImage: STORY_IMAGES.recipes,
+    gradient: ['#f093fb', '#f5576c', '#FF6B35'], headerImage: STORY_IMAGES.recipes,
     recipes: [
-      { id: '1', name: 'Домашний хлеб', time: '2 часа', difficulty: 'Средне', image: require('../../assets/products/hleb rzhanoy.jpg'), ingredients: ['500 г муки', '10 г дрожжей', '300 мл воды', '1 ч.л. соли', '1 ст.л. сахара', '2 ст.л. масла'], steps: ['Смешайте воду с дрожжами', 'Добавьте муку и соль', 'Замесите тесто', 'Дайте подойти 1 час', 'Выпекайте при 200°C 40 мин'] },
-      { id: '2', name: 'Круассаны', time: '4 часа', difficulty: 'Сложно', image: require('../../assets/products/kruassan s chocaladom.jpg'), ingredients: ['500 г муки', '300 мл молока', '80 г сахара', '300 г масла'], steps: ['Замесите тесто', 'Охладите 1 час', 'Раскатайте с маслом', 'Сложите 3 раза', 'Выпекайте при 200°C'] },
+      { id: '1', nameKey: 'recipe_homemade_bread', time: '2 часа', difficultyKey: 'recipe_difficulty_medium', image: require('../../assets/products/hleb rzhanoy.jpg'), ingredients: ['500 г муки', '10 г дрожжей', '300 мл воды', '1 ч.л. соли', '1 ст.л. сахара', '2 ст.л. масла'], steps: ['Смешайте воду с дрожжами', 'Добавьте муку и соль', 'Замесите тесто', 'Дайте подойти 1 час', 'Выпекайте при 200°C 40 мин'] },
+      { id: '2', nameKey: 'recipe_croissants', time: '4 часа', difficultyKey: 'recipe_difficulty_hard', image: require('../../assets/products/kruassan s chocaladom.jpg'), ingredients: ['500 г муки', '300 мл молока', '80 г сахара', '300 г масла'], steps: ['Замесите тесто', 'Охладите 1 час', 'Раскатайте с маслом', 'Сложите 3 раза', 'Выпекайте при 200°C'] },
     ],
   },
   tips: {
-    title: 'Советы', subtitle: 'Полезные лайфхаки', gradient: ['#11998e', '#38ef7d', '#56ab2f'], headerImage: STORY_IMAGES.tips,
+    gradient: ['#11998e', '#38ef7d', '#56ab2f'], headerImage: STORY_IMAGES.tips,
     tips: [
-      { id: '1', title: 'Как хранить хлеб', text: 'Храните в бумажном пакете до 3 дней', icon: 'bulb' },
-      { id: '2', title: 'Свежесть выпечки', text: 'Разогрейте в духовке при 180°C 3-5 мин', icon: 'flame' },
+      { id: '1', titleKey: 'tip_store_bread', textKey: 'tip_store_bread_text', icon: 'bulb' },
+      { id: '2', titleKey: 'tip_fresh_pastry', textKey: 'tip_fresh_pastry_text', icon: 'flame' },
     ],
   },
 };
 
-const STORIES = [
-  { id: 'new', label: 'Новинки', icon: 'sparkles', ...STORIES_CONTENT.new },
-  { id: 'sales', label: 'Акции', icon: 'pricetag', ...STORIES_CONTENT.sales },
-  { id: 'recipes', label: 'Рецепты', icon: 'book', ...STORIES_CONTENT.recipes },
-  { id: 'tips', label: 'Советы', icon: 'bulb', ...STORIES_CONTENT.tips },
+// Stories будут переводиться динамически в компоненте
+const STORIES_DATA = [
+  { id: 'new', labelKey: 'home_story_new', subtitleKey: 'home_story_new_subtitle', icon: 'sparkles', ...STORIES_CONTENT.new },
+  { id: 'sales', labelKey: 'home_story_sales', subtitleKey: 'home_story_sales_subtitle', icon: 'pricetag', ...STORIES_CONTENT.sales },
+  { id: 'recipes', labelKey: 'home_story_recipes', subtitleKey: 'home_story_recipes_subtitle', icon: 'book', ...STORIES_CONTENT.recipes },
+  { id: 'tips', labelKey: 'home_story_tips', subtitleKey: 'home_story_tips_subtitle', icon: 'bulb', ...STORIES_CONTENT.tips },
 ];
 
 // Категории будут переведены через t() в компоненте
@@ -128,7 +140,7 @@ export default function HomeScreen() {
   const { showNotification, unreadCount: unreadNotificationsCount } = useNotification();
   const { profile, user } = useAuth();
   const { demoBonusPoints } = useDemoBonus();
-  const { colors, isDark, t } = useSettings();
+  const { colors, isDark, t, language } = useSettings();
   const { isFavorite, toggleFavorite } = useFavorites();
   
   const bonusPoints = user ? (profile?.bonus_points || 0) : demoBonusPoints;
@@ -145,7 +157,7 @@ export default function HomeScreen() {
     return matchesCategory && matchesSearch;
   });
 
-  const activeStory = STORIES.find(s => s.id === storyModal);
+  const activeStory = STORIES_DATA.find(s => s.id === storyModal);
   const styles = createStyles(colors, isDark);
 
   const renderStoryModal = () => {
@@ -159,8 +171,8 @@ export default function HomeScreen() {
               <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.modalHeaderOverlay}>
                 <View style={styles.modalHeaderContent}>
                   <View>
-                    <Text style={styles.modalTitle}>{activeStory.title}</Text>
-                    <Text style={styles.modalSubtitle}>{activeStory.subtitle}</Text>
+                    <Text style={styles.modalTitle}>{t((activeStory as any).labelKey)}</Text>
+                    <Text style={styles.modalSubtitle}>{t((activeStory as any).subtitleKey)}</Text>
                   </View>
                   <TouchableOpacity style={styles.modalClose} onPress={() => { setStoryModal(null); setSelectedRecipe(null); }}>
                     <Ionicons name="close" size={24} color="#fff" />
@@ -177,8 +189,8 @@ export default function HomeScreen() {
                       {product.isNew && <View style={styles.modalNewBadge}><Text style={styles.badgeText}>NEW</Text></View>}
                       {product.discount && <View style={styles.modalDiscountBadge}><Text style={styles.badgeText}>-{product.discount}%</Text></View>}
                       <View style={styles.modalProductInfo}>
-                        <Text style={styles.modalProductName}>{product.name}</Text>
-                        <Text style={styles.modalProductDesc}>{product.description}</Text>
+                        <Text style={styles.modalProductName}>{getLocalizedProduct(product, language).name}</Text>
+                        <Text style={styles.modalProductDesc}>{getLocalizedProduct(product, language).description}</Text>
                         <View style={styles.modalProductFooter}>
                           <View style={styles.modalPriceRow}>
                             <Text style={styles.modalPrice}>{product.price}₽</Text>
@@ -199,10 +211,10 @@ export default function HomeScreen() {
                     <TouchableOpacity key={recipe.id} style={styles.recipeCard} onPress={() => setSelectedRecipe(recipe)}>
                       <Image source={recipe.image} style={styles.recipeImage} />
                       <View style={styles.recipeInfo}>
-                        <Text style={styles.recipeName}>{recipe.name}</Text>
+                        <Text style={styles.recipeName}>{t(recipe.nameKey)}</Text>
                         <View style={styles.recipeDetails}>
                           <View style={styles.recipeDetail}><Ionicons name="time-outline" size={14} color={colors.textMuted} /><Text style={styles.recipeDetailText}>{recipe.time}</Text></View>
-                          <View style={styles.recipeDetail}><Ionicons name="speedometer-outline" size={14} color={colors.textMuted} /><Text style={styles.recipeDetailText}>{recipe.difficulty}</Text></View>
+                          <View style={styles.recipeDetail}><Ionicons name="speedometer-outline" size={14} color={colors.textMuted} /><Text style={styles.recipeDetailText}>{t(recipe.difficultyKey)}</Text></View>
                         </View>
                       </View>
                       <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
@@ -213,15 +225,15 @@ export default function HomeScreen() {
               {storyModal === 'recipes' && selectedRecipe && (
                 <View style={styles.recipeDetailView}>
                   <TouchableOpacity style={styles.recipeBackBtn} onPress={() => setSelectedRecipe(null)}>
-                    <Ionicons name="arrow-back" size={20} color={colors.primary} /><Text style={styles.recipeBackText}>Назад</Text>
+                    <Ionicons name="arrow-back" size={20} color={colors.primary} /><Text style={styles.recipeBackText}>{t('recipe_back')}</Text>
                   </TouchableOpacity>
                   <Image source={selectedRecipe.image} style={styles.recipeDetailImage} />
-                  <Text style={styles.recipeDetailTitle}>{selectedRecipe.name}</Text>
-                  <Text style={styles.recipeSectionTitle}>🥣 Ингредиенты</Text>
+                  <Text style={styles.recipeDetailTitle}>{t(selectedRecipe.nameKey)}</Text>
+                  <Text style={styles.recipeSectionTitle}>🥣 {t('recipe_ingredients')}</Text>
                   {selectedRecipe.ingredients.map((ing: string, idx: number) => (
                     <View key={idx} style={styles.ingredientItem}><View style={styles.ingredientBullet} /><Text style={styles.ingredientText}>{ing}</Text></View>
                   ))}
-                  <Text style={styles.recipeSectionTitle}>👨‍🍳 Приготовление</Text>
+                  <Text style={styles.recipeSectionTitle}>👨‍🍳 {t('recipe_steps')}</Text>
                   {selectedRecipe.steps.map((step: string, idx: number) => (
                     <View key={idx} style={styles.stepItem}><View style={styles.stepNumber}><Text style={styles.stepNumberText}>{idx + 1}</Text></View><Text style={styles.stepText}>{step}</Text></View>
                   ))}
@@ -232,7 +244,7 @@ export default function HomeScreen() {
                   {(activeStory as any).tips.map((tip: any) => (
                     <View key={tip.id} style={styles.tipCard}>
                       <View style={styles.tipIcon}><Ionicons name={tip.icon as any} size={24} color={colors.primary} /></View>
-                      <View style={styles.tipContent}><Text style={styles.tipTitle}>{tip.title}</Text><Text style={styles.tipText}>{tip.text}</Text></View>
+                      <View style={styles.tipContent}><Text style={styles.tipTitle}>{t(tip.titleKey)}</Text><Text style={styles.tipText}>{t(tip.textKey)}</Text></View>
                     </View>
                   ))}
                 </View>
@@ -259,13 +271,13 @@ export default function HomeScreen() {
             )}
             <View style={styles.onlineIndicator} />
             <View style={styles.greeting}>
-              <Text style={styles.greetingText}>Добрый день 👋</Text>
+              <Text style={styles.greetingText}>{t('home_greeting')} 👋</Text>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName}>{profile?.full_name || 'Иван'}</Text>
                 {user ? (
                   <View style={styles.authBadge}>
                     <Ionicons name="checkmark-circle" size={14} color={colors.green} />
-                    <Text style={styles.authBadgeText}>Авторизован</Text>
+                    <Text style={styles.authBadgeText}>{t('home_authorized')}</Text>
                   </View>
                 ) : (
                   <View style={[styles.authBadge, styles.authBadgeGuest]}>
@@ -311,12 +323,12 @@ export default function HomeScreen() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
-          {STORIES.map((story) => (
+          {STORIES_DATA.map((story) => (
             <TouchableOpacity key={story.id} style={styles.storyItem} onPress={() => setStoryModal(story.id)}>
               <LinearGradient colors={story.gradient} style={styles.storyCircle}>
                 <Image source={(story as any).headerImage} style={styles.storyImage} resizeMode="cover" />
               </LinearGradient>
-              <Text style={styles.storyLabel}>{story.label}</Text>
+              <Text style={styles.storyLabel}>{t(story.labelKey as any)}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -332,7 +344,7 @@ export default function HomeScreen() {
         </ScrollView>
 
         <View style={styles.productsHeader}>
-          <Text style={styles.productsTitle}>{activeCategory === t('home_all') ? 'Все товары' : activeCategory}</Text>
+          <Text style={styles.productsTitle}>{activeCategory === t('home_all') ? t('home_all_products') : activeCategory}</Text>
           <Text style={styles.productsCount}>{filteredProducts.length} {t('cart_items')}</Text>
         </View>
 
@@ -388,7 +400,7 @@ export default function HomeScreen() {
                 <TouchableOpacity style={styles.addButtonOverlay} onPress={() => addToCart(product as any)}><Ionicons name="add" size={20} color="#fff" /></TouchableOpacity>
               </View>
               <View style={styles.productInfo}>
-                <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                <Text style={styles.productName} numberOfLines={1}>{getLocalizedProduct(product, language).name}</Text>
                 <View style={styles.ratingContainer}><Ionicons name="star" size={12} color={colors.yellow} /><Text style={styles.ratingText}>{product.rating}</Text></View>
                 <View style={styles.priceRow}><Text style={styles.price}>{product.price}₽</Text>{product.oldPrice && <Text style={styles.oldPrice}>{product.oldPrice}₽</Text>}</View>
               </View>

@@ -8,6 +8,7 @@ import { useFavorites } from '../../src/context/FavoritesContext';
 import { useCart } from '../../src/context/CartContext';
 import { useNotification } from '../../src/context/NotificationContext';
 import { useSettings } from '../../src/context/SettingsContext';
+import { getLocalizedProduct } from '../../src/utils/getLocalizedProduct';
 
 type FilterType = 'all' | 'available' | 'unavailable';
 
@@ -44,7 +45,7 @@ export default function FavoritesScreen() {
   const { favorites, loading, isFavorite, toggleFavorite } = useFavorites();
   const { addToCart } = useCart();
   const { showNotification } = useNotification();
-  const { colors, isDark, t } = useSettings();
+  const { colors, isDark, t, language } = useSettings();
   const [filter, setFilter] = useState<FilterType>('all');
 
   const styles = createStyles(colors, isDark);
@@ -139,10 +140,17 @@ export default function FavoritesScreen() {
             </View>
 
             <View style={styles.productGrid}>
-              {filteredProducts.map((product) => (
-                <View key={product.id} style={styles.productCard}>
-                  <View style={styles.imageContainer}>
-                    <Image source={PRODUCT_IMAGES[product.image] || PRODUCT_IMAGES.croissant} style={styles.productImage} resizeMode="cover" />
+              {filteredProducts.map((product) => {
+                // Отладка: показываем что приходит из базы
+                console.log('🖼️ Товар:', product.name, '| Ключ картинки:', product.image_url);
+                
+                // Получаем локализованное название и описание
+                const localizedProduct = getLocalizedProduct(product, language);
+                
+                return (
+                  <View key={product.id} style={styles.productCard}>
+                    <View style={styles.imageContainer}>
+                      <Image source={PRODUCT_IMAGES[product.image_url as string] || PRODUCT_IMAGES.croissant} style={styles.productImage} resizeMode="cover" />
                     <TouchableOpacity style={styles.favoriteButton} onPress={() => handleToggleFavorite(product)}>
                       <Ionicons name="heart" size={20} color={colors.red} />
                     </TouchableOpacity>
@@ -150,8 +158,8 @@ export default function FavoritesScreen() {
                     {product.rating && <View style={styles.ratingBadge}><Ionicons name="star" size={10} color={colors.yellow} /><Text style={styles.ratingText}>{product.rating}</Text></View>}
                   </View>
                   <View style={styles.productInfo}>
-                    <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                    {product.description && <Text style={styles.productDescription} numberOfLines={1}>{product.description}</Text>}
+                    <Text style={styles.productName} numberOfLines={2}>{localizedProduct.name}</Text>
+                    {localizedProduct.description && <Text style={styles.productDescription} numberOfLines={1}>{localizedProduct.description}</Text>}
                     <View style={styles.productFooter}>
                       <Text style={styles.productPrice}>{product.price} ₽</Text>
                       <TouchableOpacity style={[styles.addButton, product.available === false && styles.addButtonDisabled]} onPress={() => handleAddToCart(product)} disabled={product.available === false}>
@@ -160,7 +168,8 @@ export default function FavoritesScreen() {
                     </View>
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}

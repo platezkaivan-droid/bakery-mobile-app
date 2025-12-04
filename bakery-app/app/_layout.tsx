@@ -2,12 +2,14 @@ import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-route
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext';
 import { FavoritesProvider } from '../src/context/FavoritesContext';
-import { NotificationProvider } from '../src/context/NotificationContext';
+import { NotificationProvider, useNotification } from '../src/context/NotificationContext';
 import { DemoBonusProvider } from '../src/context/DemoBonusContext';
 import { SettingsProvider, useSettings } from '../src/context/SettingsContext';
+import { supabase } from '../src/lib/supabase';
 
 // Компонент для логики навигации (внутри AuthProvider)
 function InitialLayout() {
@@ -15,6 +17,40 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
+
+  // Обработка Deep Links для email подтверждения
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      console.log('📱 Deep Link получен:', event.url);
+      
+      // Ссылка будет вида: bakery-app://auth-callback#access_token=...&refresh_token=...
+      // Supabase автоматически обработает токены
+      if (event.url.includes('auth-callback')) {
+        console.log('✅ Email подтверждён! Обновляем сессию...');
+        
+        // Принудительно обновляем сессию
+        await supabase.auth.startAutoRefresh();
+        
+        // Перенаправляем на главную
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 500);
+      }
+    };
+
+    // Слушаем Deep Links когда приложение в фоне
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Проверяем Deep Link при запуске приложения
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        console.log('📱 Приложение открыто по ссылке:', url);
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
   useEffect(() => {
     // Ждем пока авторизация загрузится
