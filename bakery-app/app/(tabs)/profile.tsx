@@ -864,6 +864,14 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.menuSection}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/support')}>
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIcon}><Ionicons name="chatbubbles-outline" size={20} color={colors.primary} /></View>
+                <Text style={styles.menuItemText}>{t('menu_support')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem} onPress={() => setShowHelpModal(true)}>
               <View style={styles.menuItemLeft}>
                 <View style={styles.menuIcon}><Ionicons name="help-circle-outline" size={20} color={colors.primary} /></View>

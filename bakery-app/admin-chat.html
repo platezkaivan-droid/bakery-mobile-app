@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💬 Админ-панель чата поддержки</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 32px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      animation: fadeInDown 0.5s ease;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.5s ease;
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    }
+
+    .stat-number {
+      font-size: 40px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .stat-label {
+      color: #666;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    .filters {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease;
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 18px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      color: #333;
+    }
+
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      border-color: transparent;
+      color: white !important;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+    }
+
+    .export-btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    }
+
+    .chat-container {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+      height: 600px;
+    }
+
+    .users-list {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border-radius: 16px;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      animation: fadeInUp 0.7s ease;
+      border: 1px solid rgba(255,255,255,0.8);
+    }
+
+    .users-list h3 {
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #FF6B35;
+    }
+
+    .user-item {
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .user-item:hover {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .user-item.active {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-color: #FF6B35;
+      box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
+      transform: translateX(5px);
+    }
+
+    .user-item.unread {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    }
+
+    .user-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .user-email {
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+
+    .user-last-message {
+      font-size: 13px;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .online-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4CAF50;
+      border-radius: 50%;
+    }
+
+    .chat-area {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      animation: fadeInUp 0.8s ease;
+      border: 1px solid rgba(255,255,255,0.8);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 20px 25px;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    .message {
+      padding: 12px 16px;
+      margin: 8px 0;
+      border-radius: 16px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      align-self: flex-start;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+      animation: fadeInUp 0.3s ease;
+    }
+
+    .message.admin {
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      color: white;
+      align-self: flex-end;
+      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+      animation: fadeInUp 0.3s ease;
+    }
+
+    .message-text {
+      margin-bottom: 4px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .input-area {
+      padding: 15px 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 10px;
+    }
+
+    textarea {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #FF6B35;
+    }
+
+    button {
+      padding: 12px 24px;
+      background: #FF6B35;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #e55a2b;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .notification-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(76, 175, 80, 0.4);
+      animation: slideIn 0.5s ease;
+      z-index: 1000;
+      font-weight: 600;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px) scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .chat-container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      
+      .users-list {
+        height: 300px;
+      }
+      
+      .chat-area {
+        height: 500px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💬 Админ-панель чата поддержки</h1>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalUsers">0</div>
+        <div class="stat-label">Всего пользователей</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalMessages">0</div>
+        <div class="stat-label">Всего сообщений</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="unreadChats">0</div>
+        <div class="stat-label">Непрочитанных чатов</div>
+      </div>
+    </div>
+
+    <div id="errorContainer"></div>
+
+    <div class="filters">
+      <div class="search-box">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="🔍 Поиск по сообщениям..." 
+          oninput="handleSearch()"
+        />
+      </div>
+      <div class="filter-buttons">
+        <button class="filter-btn active" onclick="setFilter('all')">
+          Все чаты
+        </button>
+        <button class="filter-btn" onclick="setFilter('unread')">
+          Непрочитанные
+        </button>
+        <button class="filter-btn" onclick="setFilter('answered')">
+          Отвеченные
+        </button>
+      </div>
+      <button class="export-btn" onclick="exportChat()">
+        📥 Экспорт
+      </button>
+    </div>
+
+    <div class="chat-container">
+      <div class="users-list">
+        <h3 style="margin-bottom: 15px;">Пользователи</h3>
+        <div id="usersList">
+          <div class="loading">Загрузка...</div>
+        </div>
+      </div>
+
+      <div class="chat-area">
+        <div class="chat-header">
+          <span id="chatHeader">Выберите пользователя</span>
+          <span id="messageCount" style="font-size: 13px; color: #999;"></span>
+        </div>
+        <div class="messages" id="messages">
+          <div class="empty-state">
+            Выберите пользователя из списка слева
+          </div>
+        </div>
+        <div class="input-area">
+          <textarea 
+            id="messageInput" 
+            placeholder="Напишите ответ... (Enter для отправки)" 
+            rows="2"
+            disabled
+          ></textarea>
+          <button id="sendBtn" onclick="sendMessage()" disabled>
+            Отправить
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ДАННЫЕ SUPABASE
+    const SUPABASE_URL = 'https://qkyhwdmhkoizxjazwnti.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFreWh3ZG1oa29penhqYXp3bnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1ODg5MTEsImV4cCI6MjA4MDE2NDkxMX0.UsxL1RFnwavruSKkB5KeVDhMfZk_rUJxyaBsuttu9qA';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUserId = null;
+    let allMessages = [];
+    let users = {};
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    // Загрузка всех сообщений
+    async function loadAllMessages() {
+      try {
+        console.log('🔄 Загрузка сообщений...');
+        
+        const { data, error } = await supabase
+          .from('support_messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('❌ Ошибка загрузки:', error);
+          throw error;
+        }
+
+        console.log('✅ Загружено сообщений:', data ? data.length : 0);
+        console.log('📊 Данные:', data);
+
+        allMessages = data || [];
+        
+        if (allMessages.length === 0) {
+          document.getElementById('usersList').innerHTML = '<div class="empty-state">Нет сообщений<br><small>Отправьте тестовое сообщение из приложения</small></div>';
+        } else {
+          processUsers();
+        }
+        
+        updateStats();
+        
+      } catch (error) {
+        console.error('❌ Критическая ошибка:', error);
+        showError('Ошибка загрузки: ' + error.message);
+        document.getElementById('usersList').innerHTML = `<div class="error">Ошибка подключения к базе данных<br><small>${error.message}</small></div>`;
+      }
+    }
+
+    // Обработка пользователей
+    function processUsers() {
+      users = {};
+      
+      allMessages.forEach(msg => {
+        if (!users[msg.user_id]) {
+          users[msg.user_id] = {
+            id: msg.user_id,
+            messages: [],
+            lastMessage: null,
+            unreadCount: 0
+          };
+        }
+        
+        users[msg.user_id].messages.push(msg);
+        
+        if (!users[msg.user_id].lastMessage || 
+            new Date(msg.created_at) > new Date(users[msg.user_id].lastMessage.created_at)) {
+          users[msg.user_id].lastMessage = msg;
+        }
+
+        // Считаем непрочитанные (сообщения от пользователя без ответа админа)
+        if (!msg.is_admin) {
+          const hasAdminReply = users[msg.user_id].messages.some(m => 
+            m.is_admin && new Date(m.created_at) > new Date(msg.created_at)
+          );
+          if (!hasAdminReply) {
+            users[msg.user_id].unreadCount++;
+          }
+        }
+      });
+
+      renderUsersList();
+    }
+
+    // Отрисовка списка пользователей
+    function renderUsersList() {
+      const container = document.getElementById('usersList');
+      let userArray = Object.values(users).sort((a, b) => 
+        new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
+      );
+
+      // Применяем фильтр
+      if (currentFilter === 'unread') {
+        userArray = userArray.filter(u => u.unreadCount > 0);
+      } else if (currentFilter === 'answered') {
+        userArray = userArray.filter(u => u.unreadCount === 0);
+      }
+
+      // Применяем поиск
+      if (searchQuery) {
+        userArray = userArray.filter(u => 
+          u.messages.some(m => 
+            m.text.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        );
+      }
+
+      if (userArray.length === 0) {
+        container.innerHTML = '<div class="empty-state">Нет сообщений</div>';
+        return;
+      }
+
+      container.innerHTML = userArray.map(user => `
+        <div class="user-item ${user.unreadCount > 0 ? 'unread' : ''} ${currentUserId === user.id ? 'active' : ''}" 
+             onclick="selectUser('${user.id}')">
+          <div class="user-name">
+            <span class="online-indicator"></span>
+            👤 Пользователь
+            ${user.unreadCount > 0 ? `<span style="background: #FF6B35; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">${user.unreadCount}</span>` : ''}
+          </div>
+          <div class="user-email">${user.id.substring(0, 20)}...</div>
+          <div class="user-last-message">${user.lastMessage.text}</div>
+          <div class="user-time">${formatTime(user.lastMessage.created_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    // Выбор пользователя
+    function selectUser(userId) {
+      currentUserId = userId;
+      renderUsersList();
+      renderMessages();
+      
+      const messageCount = users[userId].messages.length;
+      document.getElementById('chatHeader').textContent = `Чат с пользователем ${userId.substring(0, 8)}...`;
+      document.getElementById('messageCount').textContent = `${messageCount} сообщений`;
+      document.getElementById('messageInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+    }
+
+    // Отрисовка сообщений
+    function renderMessages() {
+      const container = document.getElementById('messages');
+      
+      if (!currentUserId) {
+        container.innerHTML = '<div class="empty-state">Выберите пользователя</div>';
+        return;
+      }
+
+      const userMessages = users[currentUserId].messages.sort((a, b) => 
+        new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      container.innerHTML = userMessages.map(msg => `
+        <div class="message ${msg.is_admin ? 'admin' : 'user'}">
+          <div class="message-text">${msg.text}</div>
+          <div class="message-time">${formatTime(msg.created_at)}</div>
+        </div>
+      `).join('');
+
+      // Прокрутка вниз
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Отправка сообщения
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+
+      if (!text || !currentUserId) return;
+
+      try {
+        // 1. Сохраняем сообщение в базу
+        const { error } = await supabase
+          .from('support_messages')
+          .insert({
+            user_id: currentUserId,
+            text: text,
+            is_admin: true
+          });
+
+        if (error) throw error;
+
+        input.value = '';
+        
+        // 2. Отправляем push-уведомление
+        await sendPushNotification(currentUserId, text);
+        
+      } catch (error) {
+        showError('Ошибка отправки: ' + error.message);
+      }
+    }
+
+    // Отправка push-уведомления через Firebase HTTP v1 API
+    // ВАЖНО: Для работы push-уведомлений нужно настроить Firebase Cloud Function
+    // или использовать сервер с Firebase Admin SDK
+    async function sendPushNotification(userId, messageText) {
+      try {
+        // Получаем FCM токен пользователя
+        const { data: tokens, error } = await supabase
+          .from('user_fcm_tokens')
+          .select('fcm_token')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.log('❌ Ошибка получения FCM токена:', error);
+          return;
+        }
+
+        if (!tokens || tokens.length === 0) {
+          console.log('⚠️ FCM токен не найден для пользователя:', userId);
+          console.log('💡 Пользователь должен открыть приложение, чтобы зарегистрировать токен');
+          return;
+        }
+
+        const fcmToken = tokens[0].fcm_token;
+        console.log('📤 FCM токен найден:', fcmToken.substring(0, 30) + '...');
+
+        // Сохраняем уведомление в таблицу pending_notifications
+        // Приложение получит его через Supabase Realtime
+        const { error: notifError } = await supabase
+          .from('pending_notifications')
+          .insert({
+            user_id: userId,
+            title: '💬 Поддержка',
+            body: messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText,
+            data: JSON.stringify({ type: 'support_chat', message: messageText }),
+            fcm_token: fcmToken,
+            sent: false
+          });
+
+        if (notifError) {
+          console.log('⚠️ Не удалось сохранить уведомление:', notifError.message);
+          // Это не критично - сообщение уже сохранено в support_messages
+        } else {
+          console.log('✅ Уведомление сохранено в очередь');
+        }
+
+        // Альтернатива: Если у вас настроен Firebase Cloud Function,
+        // можно вызвать его напрямую:
+        // await fetch('https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net/sendPushNotification', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ token: fcmToken, title: '💬 Поддержка', body: messageText })
+        // });
+
+      } catch (error) {
+        console.error('❌ Ошибка отправки push:', error);
+      }
+    }
+
+    // Обновление статистики
+    function updateStats() {
+      document.getElementById('totalUsers').textContent = Object.keys(users).length;
+      document.getElementById('totalMessages').textContent = allMessages.length;
+      
+      const unreadChats = Object.values(users).filter(u => u.unreadCount > 0).length;
+      document.getElementById('unreadChats').textContent = unreadChats;
+    }
+
+    // Форматирование времени
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now - date;
+
+      if (diff < 60000) return 'только что';
+      if (diff < 3600000) return Math.floor(diff / 60000) + ' мин назад';
+      if (diff < 86400000) return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Показ ошибки
+    function showError(message) {
+      const container = document.getElementById('errorContainer');
+      container.innerHTML = `<div class="error">❌ ${message}</div>`;
+      setTimeout(() => container.innerHTML = '', 5000);
+    }
+
+    // Установка фильтра
+    function setFilter(filter) {
+      currentFilter = filter;
+      
+      // Обновляем активную кнопку
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      renderUsersList();
+    }
+
+    // Поиск
+    function handleSearch() {
+      searchQuery = document.getElementById('searchInput').value;
+      renderUsersList();
+    }
+
+    // Экспорт чата
+    function exportChat() {
+      if (!currentUserId) {
+        showError('Выберите пользователя для экспорта');
+        return;
+      }
+
+      const userMessages = users[currentUserId].messages.sort((a, b) => 
+        new Date(a.created_at) - new Date(b.created_at)
+      );
+
+      let exportText = `Экспорт чата с пользователем ${currentUserId}\n`;
+      exportText += `Дата экспорта: ${new Date().toLocaleString('ru-RU')}\n`;
+      exportText += `Всего сообщений: ${userMessages.length}\n\n`;
+      exportText += '='.repeat(50) + '\n\n';
+
+      userMessages.forEach(msg => {
+        const sender = msg.is_admin ? 'АДМИН' : 'ПОЛЬЗОВАТЕЛЬ';
+        const time = new Date(msg.created_at).toLocaleString('ru-RU');
+        exportText += `[${time}] ${sender}:\n${msg.text}\n\n`;
+      });
+
+      // Создаем файл для скачивания
+      const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat_${currentUserId}_${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showNotification('✅ Чат экспортирован!');
+    }
+
+    // Показ уведомления
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'notification-badge';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Воспроизведение звука
+    function playNotificationSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      } catch (e) {
+        console.log('Звук недоступен');
+      }
+    }
+
+    // Realtime подписка
+    function setupRealtime() {
+      supabase
+        .channel('admin_support_chat')
+        .on('postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'support_messages' },
+          (payload) => {
+            console.log('Новое сообщение:', payload.new);
+            
+            // Если это сообщение от пользователя (не от админа)
+            if (!payload.new.is_admin) {
+              playNotificationSound();
+              showNotification('💬 Новое сообщение от пользователя!');
+            }
+            
+            allMessages.unshift(payload.new);
+            processUsers();
+            updateStats();
+            
+            if (currentUserId === payload.new.user_id) {
+              renderMessages();
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    // Проверка подключения
+    async function testConnection() {
+      console.log('🔌 Проверка подключения к Supabase...');
+      console.log('📍 URL:', SUPABASE_URL);
+      console.log('🔑 Key:', SUPABASE_KEY.substring(0, 20) + '...');
+      
+      try {
+        // Проверяем подключение
+        const { data, error } = await supabase
+          .from('support_messages')
+          .select('count');
+        
+        if (error) {
+          console.error('❌ Ошибка подключения:', error);
+          showError('Не удалось подключиться к базе данных: ' + error.message);
+          return false;
+        }
+        
+        console.log('✅ Подключение успешно!');
+        return true;
+      } catch (e) {
+        console.error('❌ Критическая ошибка подключения:', e);
+        showError('Критическая ошибка: ' + e.message);
+        return false;
+      }
+    }
+
+    // Enter для отправки
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 Админ-панель запущена');
+      
+      const input = document.getElementById('messageInput');
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Проверка подключения
+      const connected = await testConnection();
+      
+      if (connected) {
+        // Загрузка данных
+        await loadAllMessages();
+        setupRealtime();
+
+        // Автообновление каждые 30 секунд
+        setInterval(loadAllMessages, 30000);
+      }
+    });
+  </script>
+</body>
+</html>

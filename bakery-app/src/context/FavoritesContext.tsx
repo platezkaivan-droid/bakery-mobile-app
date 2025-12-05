@@ -45,7 +45,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id);
 
       if (favError) {
-        console.error('Error loading favorites:', favError);
+        if (__DEV__) console.error('Error loading favorites:', favError);
         setFavorites([]);
         return;
       }
@@ -72,15 +72,15 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         .in('id', productIds);
 
       if (prodError) {
-        console.error('Error loading products:', prodError);
+        if (__DEV__) console.error('Error loading products:', prodError);
         setFavorites([]);
         return;
       }
 
       setFavorites(productsData || []);
-      console.log('Loaded favorites from DB:', productsData?.length || 0);
+      if (__DEV__) console.log('Loaded favorites from DB:', productsData?.length || 0);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      if (__DEV__) console.error('Error loading favorites:', error);
       setFavorites([]);
     } finally {
       setLoading(false);
@@ -90,7 +90,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       loadFavorites().catch(err => {
-        console.error('Failed to load favorites:', err);
+        if (__DEV__) console.error('Failed to load favorites:', err);
       });
     } else {
       setFavorites([]);
@@ -108,7 +108,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
     // Проверяем, не добавлен ли уже
     if (isFavorite(product.id)) {
-      console.log('Product already in favorites');
+      if (__DEV__) console.log('Product already in favorites');
       return;
     }
 
@@ -124,19 +124,19 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       if (error) {
         // Если ошибка дубликата - игнорируем
         if (error.code === '23505') {
-          console.log('Already in favorites (duplicate)');
+          if (__DEV__) console.log('Already in favorites (duplicate)');
           return;
         }
         
-        console.error('Error adding to favorites:', error);
+        if (__DEV__) console.error('Error adding to favorites:', error);
         throw error;
       }
 
       // Добавляем в локальное состояние
       setFavorites(prev => [...prev, product]);
-      console.log('Added to favorites:', product.name);
+      if (__DEV__) console.log('Added to favorites:', product.name);
     } catch (error) {
-      console.error('Error adding to favorites:', error);
+      if (__DEV__) console.error('Error adding to favorites:', error);
       throw error;
     }
   };
@@ -158,9 +158,9 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
       // Удаляем из локального состояния
       setFavorites(prev => prev.filter(fav => fav.id !== productId));
-      console.log('Removed from favorites:', productId);
+      if (__DEV__) console.log('Removed from favorites:', productId);
     } catch (error) {
-      console.error('Error removing from favorites:', error);
+      if (__DEV__) console.error('Error removing from favorites:', error);
       throw error;
     }
   };

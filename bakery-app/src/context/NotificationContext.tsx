@@ -55,7 +55,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       );
       
       if (isDuplicate) {
-        console.log('⚠️ Дубликат уведомления заблокирован:', notification.title);
+        if (__DEV__) console.log('⚠️ Дубликат уведомления заблокирован:', notification.title);
         return prev; // Не добавляем дубликат
       }
       

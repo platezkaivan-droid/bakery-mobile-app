@@ -11,7 +11,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, session } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { signIn, signInWithGoogle, session } = useAuth();
   const navigationState = useRootNavigationState();
 
   // Проверка: если пользователь уже авторизован, перенаправляем на главную
@@ -22,7 +23,7 @@ export default function LoginScreen() {
     // Если есть сессия, перенаправляем
     if (session) {
       setTimeout(() => {
-        router.replace('/home');
+        router.replace('/(tabs)');
       }, 100);
     }
   }, [session, navigationState]);
@@ -36,11 +37,27 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(email, password);
-      router.replace('/home');
+      router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert('Ошибка входа', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const { url } = await signInWithGoogle();
+      if (url) {
+        // Открываем браузер для OAuth
+        const { Linking } = await import('react-native');
+        await Linking.openURL(url);
+      }
+    } catch (error: any) {
+      Alert.alert('Ошибка', 'Не удалось войти через Google: ' + error.message);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -120,14 +137,22 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          <TouchableOpacity style={styles.socialBtn}>
+          <TouchableOpacity 
+            style={[styles.socialBtn, googleLoading && styles.socialBtnDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
             <Ionicons name="logo-google" size={20} color={Colors.text} />
-            <Text style={styles.socialBtnText}>Войти через Google</Text>
+            <Text style={styles.socialBtnText}>
+              {googleLoading ? 'Загрузка...' : 'Войти через Google'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.socialBtn}>
-            <Ionicons name="logo-apple" size={20} color={Colors.text} />
-            <Text style={styles.socialBtnText}>Войти через Apple</Text>
+          <TouchableOpacity style={[styles.socialBtn, styles.socialBtnDisabled]} disabled>
+            <Ionicons name="logo-apple" size={20} color={Colors.textMuted} />
+            <Text style={[styles.socialBtnText, { color: Colors.textMuted }]}>
+              Скоро: Войти через Apple
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -266,6 +291,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  socialBtnDisabled: {
+    opacity: 0.5,
   },
   socialBtnText: {
     fontSize: 16,

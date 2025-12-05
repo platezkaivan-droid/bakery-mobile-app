@@ -156,6 +156,7 @@ export const translations = {
     menu_notifications: 'Уведомления',
     menu_language: 'Язык',
     menu_theme: 'Тема',
+    menu_support: 'Поддержка',
     menu_help: 'Помощь',
     menu_about: 'О приложении',
     menu_logout: 'Выйти',
@@ -369,6 +370,7 @@ export const translations = {
     menu_notifications: 'Notifications',
     menu_language: 'Language',
     menu_theme: 'Theme',
+    menu_support: 'Support',
     menu_help: 'Help',
     menu_about: 'About',
     menu_logout: 'Log out',
@@ -567,6 +569,7 @@ export const translations = {
     menu_notifications: 'Хабарландырулар',
     menu_language: 'Тіл',
     menu_theme: 'Тақырып',
+    menu_support: 'Қолдау',
     menu_help: 'Көмек',
     menu_about: 'Қолданба туралы',
     menu_logout: 'Шығу',
@@ -702,6 +705,7 @@ export const translations = {
     menu_notifications: 'Белдерүләр',
     menu_language: 'Тел',
     menu_theme: 'Тема',
+    menu_support: 'Ярдәм',
     menu_help: 'Ярдәм',
     menu_about: 'Кушымта турында',
     menu_logout: 'Чыгу',
@@ -797,6 +801,7 @@ export const translations = {
     menu_notifications: 'Bildirishnomalar',
     menu_language: 'Til',
     menu_theme: 'Mavzu',
+    menu_support: 'Qo\'llab-quvvatlash',
     menu_help: 'Yordam',
     menu_about: 'Ilova haqida',
     menu_logout: 'Chiqish',
@@ -892,6 +897,7 @@ export const translations = {
     menu_notifications: 'Ծանուցումներ',
     menu_language: 'Լեզու',
     menu_theme: 'Թեմա',
+    menu_support: 'Աջակցություն',
     menu_help: 'Օգնություն',
     menu_about: 'Հավելվածի մասին',
     menu_logout: 'Դուրս գալ',
@@ -1031,12 +1037,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const loadLanguage = async () => {
       try {
         const savedLanguage = await AsyncStorage.getItem('app_language');
-        console.log('📖 Загружен язык из AsyncStorage:', savedLanguage);
+        if (__DEV__) console.log('📖 Загружен язык из AsyncStorage:', savedLanguage);
         if (savedLanguage && ['ru', 'en', 'kz', 'tt', 'uz', 'hy'].includes(savedLanguage)) {
           setLanguage(savedLanguage as Language);
         }
       } catch (error) {
-        console.error('❌ Ошибка загрузки языка:', error);
+        if (__DEV__) console.error('❌ Ошибка загрузки языка:', error);
       } finally {
         setIsLanguageLoaded(true);
       }
@@ -1046,13 +1052,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   // Сохранение языка в AsyncStorage при изменении
   const handleSetLanguage = async (lang: Language) => {
-    console.log('💾 Сохраняем язык:', lang);
+    if (__DEV__) console.log('💾 Сохраняем язык:', lang);
     try {
       await AsyncStorage.setItem('app_language', lang);
       setLanguage(lang);
-      console.log('✅ Язык сохранён успешно');
+      if (__DEV__) console.log('✅ Язык сохранён успешно');
     } catch (error) {
-      console.error('❌ Ошибка сохранения языка:', error);
+      if (__DEV__) console.error('❌ Ошибка сохранения языка:', error);
       setLanguage(lang); // Устанавливаем даже если не удалось сохранить
     }
   };

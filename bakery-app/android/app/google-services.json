@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616728560840",
+    "project_id": "bakery-app-6452b",
+    "storage_bucket": "bakery-app-6452b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616728560840:android:2c21ef6cee8430f41351fd",
+        "android_client_info": {
+          "package_name": "com.bakery.pavlova"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAH_h1PaYZsn9dhIdt362DSPuFV1Sd6iSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

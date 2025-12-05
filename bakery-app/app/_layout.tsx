@@ -1,15 +1,39 @@
-import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import { Slot, useRouter, useSegments, useRootNavigationState, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import * as Linking from 'expo-linking';
+import messaging from '@react-native-firebase/messaging';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext';
 import { FavoritesProvider } from '../src/context/FavoritesContext';
-import { NotificationProvider, useNotification } from '../src/context/NotificationContext';
+import { NotificationProvider } from '../src/context/NotificationContext';
 import { DemoBonusProvider } from '../src/context/DemoBonusContext';
-import { SettingsProvider, useSettings } from '../src/context/SettingsContext';
+import { SettingsProvider } from '../src/context/SettingsContext';
 import { supabase } from '../src/lib/supabase';
+
+// Запрос разрешения на уведомления
+async function requestNotificationPermission() {
+  try {
+    // Проверяем, запрашивали ли уже
+    const asked = await AsyncStorage.getItem('notification_permission_asked');
+    if (asked === 'true') return;
+
+    // Запрашиваем разрешение
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (__DEV__) console.log('🔔 Notification permission:', enabled ? 'granted' : 'denied');
+
+    // Сохраняем что уже спрашивали
+    await AsyncStorage.setItem('notification_permission_asked', 'true');
+  } catch (error) {
+    if (__DEV__) console.error('Error requesting notification permission:', error);
+  }
+}
 
 // Компонент для логики навигации (внутри AuthProvider)
 function InitialLayout() {
@@ -17,16 +41,66 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
+  const pathname = usePathname();
+  const [hasRedirected, setHasRedirected] = useState(false);
+
+  // Запрашиваем разрешение на уведомления при первом запуске
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  // Обработка foreground уведомлений (когда приложение открыто)
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      console.log('💬 Новое сообщение (foreground):', remoteMessage);
+
+      const title = remoteMessage.notification?.title || '';
+      const body = remoteMessage.notification?.body || '';
+
+      // Проверяем, что это сообщение от поддержки
+      const isSupportMessage =
+        title.toLowerCase().includes('админ') ||
+        title.toLowerCase().includes('поддержка') ||
+        title.toLowerCase().includes('support') ||
+        remoteMessage.data?.type === 'support_chat';
+
+      // Если мы уже в чате поддержки - не показываем уведомление
+      if (pathname === '/support') {
+        console.log('📍 Уже в чате, уведомление не нужно');
+        return;
+      }
+
+      // Показываем уведомление только для сообщений поддержки
+      if (isSupportMessage) {
+        Alert.alert(
+          '💬 Новое сообщение',
+          'Администратор ответил вам в чате',
+          [
+            {
+              text: 'Позже',
+              style: 'cancel',
+            },
+            {
+              text: 'Посмотреть',
+              onPress: () => router.push('/support'),
+            },
+          ]
+        );
+      }
+    });
+
+    return unsubscribe;
+  }, [pathname, router]);
 
   // Обработка Deep Links для email подтверждения
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
-      console.log('📱 Deep Link получен:', event.url);
+      if (__DEV__) console.log('📱 Deep Link получен:', event.url);
       
       // Ссылка будет вида: bakery-app://auth-callback#access_token=...&refresh_token=...
       // Supabase автоматически обработает токены
       if (event.url.includes('auth-callback')) {
-        console.log('✅ Email подтверждён! Обновляем сессию...');
+        if (__DEV__) console.log('✅ Email подтверждён! Обновляем сессию...');
         
         // Принудительно обновляем сессию
         await supabase.auth.startAutoRefresh();
@@ -44,9 +118,11 @@ function InitialLayout() {
     // Проверяем Deep Link при запуске приложения
     Linking.getInitialURL().then((url) => {
       if (url) {
-        console.log('📱 Приложение открыто по ссылке:', url);
+        if (__DEV__) console.log('📱 Приложение открыто по ссылке:', url);
         handleDeepLink({ url });
       }
+    }).catch((err) => {
+      if (__DEV__) console.error('Error getting initial URL:', err);
     });
 
     return () => subscription.remove();
@@ -60,23 +136,55 @@ function InitialLayout() {
 
     // Ждем пока навигация будет готова
     if (!navigationState?.key) {
-      console.log('Navigation not ready yet...');
+      if (__DEV__) console.log('Navigation not ready yet...');
       return;
     }
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTabsGroup = segments[0] === '(tabs)';
+    const isUnmatched = pathname === '/+not-found' || pathname === '' || pathname === '/' || !segments[0];
 
-    // Только редиректим если пользователь явно на неправильном экране
-    if (!session && !inAuthGroup && segments.length > 0) {
-      // Нет сессии и мы не на логине -> иди логиниться
-      console.log('No session, redirecting to auth/login...');
-      setTimeout(() => router.replace('/auth/login'), 100);
-    } else if (session && inAuthGroup) {
-      // Есть сессия но мы на экране логина -> иди в приложение
-      console.log('Session exists, redirecting to home...');
-      setTimeout(() => router.replace('/(tabs)'), 100);
+    if (__DEV__) console.log('🧭 Navigation:', { 
+      session: !!session, 
+      pathname,
+      inAuthGroup, 
+      inTabsGroup,
+      isUnmatched,
+      hasRedirected
+    });
+
+    // Предотвращаем множественные редиректы
+    if (hasRedirected) return;
+
+    // Если попали на несуществующий роут - редиректим
+    if (isUnmatched) {
+      setHasRedirected(true);
+      if (session) {
+        if (__DEV__) console.log('🏠 Unmatched -> tabs');
+        router.replace('/(tabs)');
+      } else {
+        if (__DEV__) console.log('🔐 Unmatched -> login');
+        router.replace('/auth/login');
+      }
+      setTimeout(() => setHasRedirected(false), 500);
+      return;
     }
-  }, [session, loading, segments, navigationState]);
+
+    // Нет сессии и мы не на логине -> иди логиниться
+    if (!session && !inAuthGroup) {
+      setHasRedirected(true);
+      if (__DEV__) console.log('No session -> login');
+      router.replace('/auth/login');
+      setTimeout(() => setHasRedirected(false), 500);
+    } 
+    // Есть сессия но мы на экране логина -> иди в приложение
+    else if (session && inAuthGroup) {
+      setHasRedirected(true);
+      if (__DEV__) console.log('Has session -> tabs');
+      router.replace('/(tabs)');
+      setTimeout(() => setHasRedirected(false), 500);
+    }
+  }, [session, loading, segments, navigationState, pathname, hasRedirected]);
 
   // Показываем загрузку только пока идет проверка авторизации
   if (loading) {

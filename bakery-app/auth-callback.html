@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизация - Пекарня Павлова</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    
+    p {
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #FF6B35;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      color: white;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 107, 53, 0.4);
+    }
+    
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    
+    .status.info {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    #manual-link {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🥐</div>
+    <h1 id="title">Перенаправление...</h1>
+    <p id="message">Подождите, открываем приложение</p>
+    <div class="spinner" id="spinner"></div>
+    
+    <div id="status-container"></div>
+    
+    <div id="manual-link">
+      <p>Если приложение не открылось автоматически:</p>
+      <a href="#" class="btn" id="open-app-btn">Открыть приложение</a>
+    </div>
+  </div>
+
+  <script>
+    // Получаем параметры из URL
+    const hash = window.location.hash.substring(1);
+    const search = window.location.search.substring(1);
+    const params = new URLSearchParams(hash || search);
+    
+    // Извлекаем токены
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const tokenHash = params.get('token_hash');
+    const token = params.get('token');
+    const type = params.get('type');
+    const error = params.get('error');
+    const errorDescription = params.get('error_description');
+    
+    console.log('🔐 Auth Callback Page');
+    console.log('Parameters:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      hasTokenHash: !!tokenHash,
+      hasToken: !!token,
+      type,
+      error
+    });
+    
+    function showStatus(message, type) {
+      const container = document.getElementById('status-container');
+      container.innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+    
+    function showManualLink(url) {
+      document.getElementById('manual-link').style.display = 'block';
+      document.getElementById('open-app-btn').href = url;
+      document.getElementById('spinner').style.display = 'none';
+    }
+    
+    // Обработка ошибок
+    if (error) {
+      document.getElementById('title').textContent = 'Ошибка';
+      document.getElementById('message').textContent = errorDescription || 'Произошла ошибка авторизации';
+      document.getElementById('spinner').style.display = 'none';
+      showStatus(errorDescription || error, 'error');
+    } else {
+      // Формируем Deep Link URL
+      let deepLinkUrl = 'bakery-app://auth-callback';
+      const deepLinkParams = [];
+      
+      if (accessToken) deepLinkParams.push(`access_token=${accessToken}`);
+      if (refreshToken) deepLinkParams.push(`refresh_token=${refreshToken}`);
+      if (tokenHash) deepLinkParams.push(`token_hash=${tokenHash}`);
+      if (token) deepLinkParams.push(`token=${token}`);
+      if (type) deepLinkParams.push(`type=${type}`);
+      
+      if (deepLinkParams.length > 0) {
+        deepLinkUrl += '?' + deepLinkParams.join('&');
+      }
+      
+      console.log('🔗 Deep Link URL:', deepLinkUrl);
+      
+      // Пробуем открыть приложение
+      let appOpened = false;
+      
+      // Метод 1: Прямой редирект
+      setTimeout(() => {
+        if (!appOpened) {
+          window.location.href = deepLinkUrl;
+        }
+      }, 100);
+      
+      // Метод 2: Через iframe (для некоторых браузеров)
+      setTimeout(() => {
+        if (!appOpened) {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = deepLinkUrl;
+          document.body.appendChild(iframe);
+        }
+      }, 500);
+      
+      // Показываем ручную ссылку через 2 секунды
+      setTimeout(() => {
+        document.getElementById('title').textContent = 'Почти готово!';
+        document.getElementById('message').textContent = 'Если приложение не открылось, нажмите кнопку ниже';
+        showManualLink(deepLinkUrl);
+        showStatus('✅ Авторизация успешна! Откройте приложение.', 'success');
+      }, 2000);
+      
+      // Определяем, что приложение открылось (страница скрылась)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          appOpened = true;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
