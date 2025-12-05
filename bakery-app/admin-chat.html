@@ -719,39 +719,62 @@
       }
     }
 
-    // Отправка push-уведомления через Supabase Edge Function + FCM v1 API
+    // URL сервера для отправки push
+    // Запусти: node admin-server.js или start-admin.bat
+    const PUSH_SERVER = window.location.origin;
+
+    // Отправка push-уведомления через локальный сервер
     async function sendPushNotification(userId, messageText) {
       try {
         console.log('📤 Отправка push-уведомления пользователю:', userId);
 
-        // Вызываем Supabase Edge Function для отправки push
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+        // Получаем FCM токен пользователя из базы
+        const { data: tokens, error: tokenError } = await supabase
+          .from('user_fcm_tokens')
+          .select('fcm_token')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (tokenError || !tokens || tokens.length === 0) {
+          console.log('⚠️ FCM токен не найден для пользователя');
+          showNotification('⚠️ Токен не найден - пользователь не разрешил уведомления');
+          return;
+        }
+
+        const fcmToken = tokens[0].fcm_token;
+        console.log('📱 FCM токен:', fcmToken.substring(0, 30) + '...');
+
+        // Отправляем через локальный сервер
+        const response = await fetch(`${PUSH_SERVER}/send-push`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: userId,
+            fcm_token: fcmToken,
             title: '💬 Поддержка Павлова',
-            body: messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText,
-            data: { type: 'support_chat' }
+            message: messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText
           })
         });
 
         const result = await response.json();
         
         if (result.success) {
-          console.log('✅ Push-уведомление отправлено!');
+          console.log('✅ Push отправлен!');
           showNotification('📱 Push отправлен!');
         } else {
-          console.log('⚠️ Push не отправлен:', result.error || result.message);
-          // Не показываем ошибку пользователю - сообщение всё равно сохранено
+          console.error('❌ Ошибка:', result.error);
+          showNotification('❌ Ошибка: ' + (result.error || 'Unknown'));
         }
 
       } catch (error) {
         console.error('❌ Ошибка отправки push:', error);
-        // Не критично - сообщение уже сохранено в support_messages
+        
+        // Проверяем, запущен ли сервер
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          showNotification('❌ Сервер не запущен! Запусти: node admin-server.js');
+        } else {
+          showNotification('❌ Ошибка: ' + error.message);
+        }
       }
     }
 

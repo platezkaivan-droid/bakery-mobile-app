@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useRootNavigationState } from 'expo-router';
+import { router } from 'expo-router';
 import { Colors } from '../../src/constants/colors';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -13,20 +13,14 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn, signInWithGoogle, session } = useAuth();
-  const navigationState = useRootNavigationState();
 
-  // Проверка: если пользователь уже авторизован, перенаправляем на главную
+  // Автоматический редирект если сессия появилась (например после Google Sign-In)
   useEffect(() => {
-    // Ждем готовности навигации
-    if (!navigationState?.key) return;
-    
-    // Если есть сессия, перенаправляем
     if (session) {
-      setTimeout(() => {
-        router.replace('/(tabs)');
-      }, 100);
+      console.log('✅ LoginScreen: Session detected, redirecting to tabs...');
+      router.replace('/(tabs)');
     }
-  }, [session, navigationState]);
+  }, [session]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,9 +30,12 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      console.log('🔐 LoginScreen: Starting email login...');
       await signIn(email, password);
-      router.replace('/(tabs)');
+      console.log('✅ LoginScreen: Email login successful');
+      // Навигация произойдёт автоматически через useEffect выше или через _layout.tsx
     } catch (error: any) {
+      console.error('❌ LoginScreen: Email login error:', error.message);
       Alert.alert('Ошибка входа', error.message);
     } finally {
       setLoading(false);
@@ -48,15 +45,14 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { url } = await signInWithGoogle();
-      if (url) {
-        // Открываем браузер для OAuth
-        const { Linking } = await import('react-native');
-        await Linking.openURL(url);
-      }
+      console.log('🔐 LoginScreen: Starting Google Sign-In...');
+      await signInWithGoogle();
+      console.log('✅ LoginScreen: Google Sign-In successful');
+      // Навигация произойдёт автоматически через useEffect выше или через _layout.tsx
     } catch (error: any) {
-      Alert.alert('Ошибка', 'Не удалось войти через Google: ' + error.message);
-    } finally {
+      if (error.message !== 'Вход отменен') {
+        Alert.alert('Ошибка', 'Не удалось войти через Google: ' + error.message);
+      }
       setGoogleLoading(false);
     }
   };
@@ -67,13 +63,6 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
-
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
@@ -177,20 +166,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
-  header: {
-    paddingTop: 10,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 60,
     marginBottom: 40,
   },
   logo: {

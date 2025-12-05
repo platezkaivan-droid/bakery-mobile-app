@@ -4,3 +4,22 @@ dist/
 *.log
 .env
 .env.local
+
+# Documentation (exclude from repo)
+*.md
+!README.md
+
+# Build artifacts
+*.apk
+*.aab
+
+# Secrets
+*.json
+!package.json
+!package-lock.json
+!app.json
+!tsconfig.json
+!google-services.json
+
+# Logs
+logs*.txt

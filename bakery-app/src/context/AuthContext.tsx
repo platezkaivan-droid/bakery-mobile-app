@@ -4,11 +4,12 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { Linking, Platform, PermissionsAndroid } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import messaging from '@react-native-firebase/messaging';
+import { router } from 'expo-router';
 
 // ============================================
 // КОНФИГУРАЦИЯ
 // ============================================
-const GOOGLE_WEB_CLIENT_ID = '305232989194-4gi8higb5pv0jk2ijaphnkeh6h7585nb.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = '616728560840-895u526601h4u6s4d1acr85l3fm6603f.apps.googleusercontent.com';
 const GITHUB_PAGES_URL = 'https://platezkaivan-droid.github.io/email-redirect';
 
 interface Profile {
@@ -126,41 +127,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ИНИЦИАЛИЗАЦИЯ
   // ============================================
   useEffect(() => {
-    if (__DEV__) console.log('🚀 AuthContext: Initializing...');
+    let mounted = true;
+    let loadingFinished = false;
+    console.log('🚀 AuthContext: Initializing...');
     
     // Настройка Google Sign-In
-    GoogleSignin.configure({
-      webClientId: GOOGLE_WEB_CLIENT_ID,
-      offlineAccess: true,
-    });
+    try {
+      GoogleSignin.configure({
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        offlineAccess: true,
+        forceCodeForRefreshToken: true,
+      });
+      console.log('✅ Google Sign-In configured');
+    } catch (e) {
+      console.error('❌ Google Sign-In config error:', e);
+    }
 
     const initializeAuth = async () => {
       try {
-        if (__DEV__) console.log('🔐 AuthContext: Loading session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔐 AuthContext: Loading session...');
         
-        if (error) {
-          if (__DEV__) console.error('❌ AuthContext: Error loading session:', error);
+        // Таймаут на загрузку сессии - 2 секунды максимум
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session load timeout')), 2000)
+        );
+        
+        let session = null;
+        try {
+          const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+          session = result?.data?.session;
+        } catch (e) {
+          console.warn('⚠️ AuthContext: Session load timeout or error:', e);
         }
         
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          if (__DEV__) console.log('✅ AuthContext: Session found, loading profile...');
-          loadProfile(session.user.id).catch(console.error);
-          saveFcmToken(session.user.id).catch(console.error);
-        } else {
-          if (__DEV__) console.log('⚠️ AuthContext: No session found');
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            console.log('✅ AuthContext: Session found for:', session.user.email);
+            // Загружаем профиль в фоне, не блокируем
+            loadProfile(session.user.id).catch(console.error);
+            saveFcmToken(session.user.id);
+          } else {
+            console.log('⚠️ AuthContext: No session found');
+          }
         }
       } catch (error) {
-        if (__DEV__) console.error('❌ AuthContext: Error fetching session:', error);
+        console.error('❌ AuthContext: Error fetching session:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          console.log('✅ AuthContext: Loading finished');
+          loadingFinished = true;
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
+
+    // ============================================
+    // 🛡️ ПРЕДОХРАНИТЕЛЬ: Принудительно выключаем loading через 5 секунд
+    // ============================================
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && !loadingFinished) {
+        console.warn('⚠️ AuthContext: SAFETY TIMEOUT - Force stopping loading after 5s');
+        setLoading(false);
+      }
+    }, 5000);
 
     // ============================================
     // ОБРАБОТКА DEEP LINKS
@@ -303,8 +338,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
       linkingSubscription.remove();
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
@@ -395,54 +432,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ============================================
   const signInWithGoogle = async () => {
     try {
-      if (__DEV__) console.log('🔐 Starting Native Google Sign In...');
+      console.log('🔐 Starting Native Google Sign In...');
       
-      // Проверяем наличие Google Play Services
+      // 1. Проверяем наличие Google Play Services
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       
-      // Открываем нативное окно выбора аккаунта
+      // 2. ВАЖНО: Делаем выход, чтобы сбросить кеш аккаунта
+      try {
+        await GoogleSignin.signOut();
+        console.log('✅ Previous Google session cleared');
+      } catch (e) {
+        // Игнорируем ошибку выхода
+      }
+      
+      // 3. Открываем нативное окно выбора аккаунта
+      console.log('📱 Opening Google Sign In dialog...');
       const userInfo = await GoogleSignin.signIn();
       
-      if (__DEV__) console.log('✅ Google Sign In successful:', userInfo.data?.user?.email);
+      console.log('✅ Google Sign In successful:', userInfo.data?.user?.email);
       
-      // Получаем ID token
-      // В новых версиях библиотеки токен внутри userInfo.data
+      // 4. Получаем ID token
       const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
       
       if (!idToken) {
-        throw new Error('No ID token received from Google');
+        throw new Error('Не удалось получить ID Token от Google');
       }
       
-      if (__DEV__) console.log('🔑 Got ID token, sending to Supabase...');
+      console.log('🔑 Got ID token, sending to Supabase...');
       
-      // Отправляем токен в Supabase
+      // 5. Отправляем токен в Supabase
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: idToken,
       });
       
       if (error) {
-        if (__DEV__) console.error('❌ Supabase error:', error);
+        console.error('❌ Supabase error:', error);
         throw error;
       }
       
-      if (__DEV__) console.log('✅ Supabase session created!');
+      console.log('✅ Supabase session created!');
+      
+      // 6. Явно устанавливаем сессию и пользователя
+      if (data.session) {
+        console.log('🔄 Setting session and user state...');
+        setSession(data.session);
+        setUser(data.session.user);
+        setLoading(false); // ВАЖНО: Явно выключаем loading
+        loadProfile(data.session.user.id).catch(console.error);
+        saveFcmToken(data.session.user.id);
+        console.log('✅ Session set, loading=false, navigation should happen now');
+      }
       
       return data;
       
     } catch (error: any) {
+      console.error('❌ Google Sign In error:', error);
+      
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        if (__DEV__) console.log('⚠️ User cancelled Google Sign In');
         throw new Error('Вход отменен');
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        if (__DEV__) console.log('⚠️ Sign in already in progress');
         throw new Error('Вход уже выполняется');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        if (__DEV__) console.log('❌ Play Services not available');
         throw new Error('Google Play Services недоступны');
+      } else if (error.code === 'DEVELOPER_ERROR' || error.message?.includes('DEVELOPER_ERROR')) {
+        throw new Error('Ошибка конфигурации: проверьте SHA-1 в Firebase Console');
       } else {
-        if (__DEV__) console.error('❌ Google Sign In error:', error);
-        throw error;
+        throw new Error(error.message || 'Неизвестная ошибка Google Sign In');
       }
     }
   };

@@ -16,18 +16,6 @@
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0"/>
-    
-    <!-- Firebase Push Notifications - канал по умолчанию -->
-    <meta-data
-      android:name="com.google.firebase.messaging.default_notification_channel_id"
-      android:value="support_chat_channel"
-      tools:replace="android:value" />
-    
-    <!-- Цвет иконки уведомлений -->
-    <meta-data
-      android:name="com.google.firebase.messaging.default_notification_color"
-      android:resource="@android:color/holo_orange_light"
-      tools:replace="android:resource" />
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
@@ -39,14 +27,6 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="bakery-app"/>
       </intent-filter>
-      <intent-filter android:autoVerify="true" data-generated="true">
-        <action android:name="android.intent.action.VIEW"/>
-        <data android:scheme="bakery-app" android:host="auth-callback"/>
-        <category android:name="android.intent.category.BROWSABLE"/>
-        <category android:name="android.intent.category.DEFAULT"/>
-      </intent-filter>
-      
-      <!-- App Links для GitHub Pages (Email верификация) -->
       <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
@@ -55,8 +35,6 @@
         <data android:host="platezkaivan-droid.github.io"/>
         <data android:pathPrefix="/email-redirect"/>
       </intent-filter>
-      
-      <!-- App Links для bakery-email-redirect -->
       <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
@@ -64,6 +42,12 @@
         <data android:scheme="https"/>
         <data android:host="platezkaivan-droid.github.io"/>
         <data android:pathPrefix="/bakery-email-redirect"/>
+      </intent-filter>
+      <intent-filter android:autoVerify="true" data-generated="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="bakery-app" android:host="auth-callback"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>
     </activity>
   </application>

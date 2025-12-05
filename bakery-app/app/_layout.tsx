@@ -1,207 +1,188 @@
-import { Slot, useRouter, useSegments, useRootNavigationState, usePathname } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
-import * as Linking from 'expo-linking';
+import { Slot, useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import { useEffect } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, Platform, Alert, PermissionsAndroid } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import messaging from '@react-native-firebase/messaging';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext';
 import { FavoritesProvider } from '../src/context/FavoritesContext';
 import { NotificationProvider } from '../src/context/NotificationContext';
 import { DemoBonusProvider } from '../src/context/DemoBonusContext';
 import { SettingsProvider } from '../src/context/SettingsContext';
-import { supabase } from '../src/lib/supabase';
 
-// Запрос разрешения на уведомления
+// Предотвращаем автоматическое скрытие нативного сплэша
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// ============================================
+// ГЛОБАЛЬНАЯ НАСТРОЙКА PUSH-УВЕДОМЛЕНИЙ
+// ============================================
 async function requestNotificationPermission() {
   try {
-    // Проверяем, запрашивали ли уже
-    const asked = await AsyncStorage.getItem('notification_permission_asked');
-    if (asked === 'true') return;
-
-    // Запрашиваем разрешение
+    console.log('🔔 Запрос разрешения на уведомления...');
+    
+    // Android 13+ (API 33+) требует явного запроса разрешения POST_NOTIFICATIONS
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      console.log('📱 Android 13+ detected, requesting POST_NOTIFICATIONS...');
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        {
+          title: 'Разрешение на уведомления',
+          message: 'Приложение хочет отправлять вам уведомления о новых сообщениях от поддержки',
+          buttonNeutral: 'Спросить позже',
+          buttonNegative: 'Отмена',
+          buttonPositive: 'Разрешить',
+        }
+      );
+      
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('✅ POST_NOTIFICATIONS разрешено');
+      } else {
+        console.log('❌ POST_NOTIFICATIONS отклонено:', granted);
+      }
+    }
+    
+    // Запрашиваем разрешение через Firebase Messaging
     const authStatus = await messaging().requestPermission();
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    if (__DEV__) console.log('🔔 Notification permission:', enabled ? 'granted' : 'denied');
-
-    // Сохраняем что уже спрашивали
-    await AsyncStorage.setItem('notification_permission_asked', 'true');
+    if (enabled) {
+      console.log('✅ Уведомления разрешены:', authStatus);
+      
+      // Получаем FCM токен
+      const token = await messaging().getToken();
+      console.log('📱 FCM Token:', token?.substring(0, 40) + '...');
+    } else {
+      console.log('❌ Уведомления запрещены');
+    }
   } catch (error) {
-    if (__DEV__) console.error('Error requesting notification permission:', error);
+    console.error('❌ Ошибка запроса разрешений:', error);
   }
 }
 
-// Компонент для логики навигации (внутри AuthProvider)
-function InitialLayout() {
+// Обработка уведомлений когда приложение в фоне/закрыто
+messaging().setBackgroundMessageHandler(async remoteMessage => {
+  console.log('📩 Background message:', remoteMessage);
+});
+
+
+const InitialLayout = () => {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  
+  // ВАЖНО: Проверяем, готова ли навигация
   const navigationState = useRootNavigationState();
-  const pathname = usePathname();
-  const [hasRedirected, setHasRedirected] = useState(false);
 
-  // Запрашиваем разрешение на уведомления при первом запуске
+  // ============================================
+  // ЗАПРОС РАЗРЕШЕНИЙ НА УВЕДОМЛЕНИЯ ПРИ ЗАПУСКЕ
+  // ============================================
   useEffect(() => {
     requestNotificationPermission();
+
+    // Обработка уведомлений когда приложение открыто (foreground)
+    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+      console.log('📩 Foreground message:', remoteMessage);
+      
+      // Показываем Alert с уведомлением
+      Alert.alert(
+        remoteMessage.notification?.title || '💬 Новое сообщение',
+        remoteMessage.notification?.body || '',
+        [
+          { text: 'OK', style: 'default' },
+          { 
+            text: 'Открыть чат', 
+            onPress: () => router.push('/support'),
+            style: 'default'
+          }
+        ]
+      );
+    });
+
+    // Обработка нажатия на уведомление (когда приложение было в фоне)
+    const unsubscribeOpened = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('📩 Notification opened app:', remoteMessage);
+      // Переходим в чат поддержки
+      if (remoteMessage.data?.type === 'support_chat') {
+        router.push('/support');
+      }
+    });
+
+    // Проверяем, было ли приложение открыто через уведомление (cold start)
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('📩 App opened from notification:', remoteMessage);
+          if (remoteMessage.data?.type === 'support_chat') {
+            // Небольшая задержка чтобы навигация успела инициализироваться
+            setTimeout(() => router.push('/support'), 1000);
+          }
+        }
+      });
+
+    return () => {
+      unsubscribeForeground();
+      unsubscribeOpened();
+    };
   }, []);
 
-  // Обработка foreground уведомлений (когда приложение открыто)
   useEffect(() => {
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
-      console.log('💬 Новое сообщение (foreground):', remoteMessage);
-
-      const title = remoteMessage.notification?.title || '';
-      const body = remoteMessage.notification?.body || '';
-
-      // Проверяем, что это сообщение от поддержки
-      const isSupportMessage =
-        title.toLowerCase().includes('админ') ||
-        title.toLowerCase().includes('поддержка') ||
-        title.toLowerCase().includes('support') ||
-        remoteMessage.data?.type === 'support_chat';
-
-      // Если мы уже в чате поддержки - не показываем уведомление
-      if (pathname === '/support') {
-        console.log('📍 Уже в чате, уведомление не нужно');
-        return;
-      }
-
-      // Показываем уведомление только для сообщений поддержки
-      if (isSupportMessage) {
-        Alert.alert(
-          '💬 Новое сообщение',
-          'Администратор ответил вам в чате',
-          [
-            {
-              text: 'Позже',
-              style: 'cancel',
-            },
-            {
-              text: 'Посмотреть',
-              onPress: () => router.push('/support'),
-            },
-          ]
-        );
-      }
+    console.log('🧭 InitialLayout:', {
+      loading,
+      session: !!session,
+      navReady: !!navigationState?.key,
+      segments
     });
 
-    return unsubscribe;
-  }, [pathname, router]);
-
-  // Обработка Deep Links для email подтверждения
-  useEffect(() => {
-    const handleDeepLink = async (event: { url: string }) => {
-      if (__DEV__) console.log('📱 Deep Link получен:', event.url);
-      
-      // Ссылка будет вида: bakery-app://auth-callback#access_token=...&refresh_token=...
-      // Supabase автоматически обработает токены
-      if (event.url.includes('auth-callback')) {
-        if (__DEV__) console.log('✅ Email подтверждён! Обновляем сессию...');
-        
-        // Принудительно обновляем сессию
-        await supabase.auth.startAutoRefresh();
-        
-        // Перенаправляем на главную
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 500);
-      }
-    };
-
-    // Слушаем Deep Links когда приложение в фоне
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    // Проверяем Deep Link при запуске приложения
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        if (__DEV__) console.log('📱 Приложение открыто по ссылке:', url);
-        handleDeepLink({ url });
-      }
-    }).catch((err) => {
-      if (__DEV__) console.error('Error getting initial URL:', err);
-    });
-
-    return () => subscription.remove();
-  }, [router]);
-
-  useEffect(() => {
-    // Ждем пока авторизация загрузится
-    if (loading) {
+    // Если навигация не готова или идет загрузка — ждем
+    if (!navigationState?.key || loading) {
+      console.log('⏳ Waiting: navReady=', !!navigationState?.key, 'loading=', loading);
       return;
     }
 
-    // Ждем пока навигация будет готова
-    if (!navigationState?.key) {
-      if (__DEV__) console.log('Navigation not ready yet...');
-      return;
-    }
+    // Скрываем нативный сплэш, когда загрузка прошла
+    SplashScreen.hideAsync().catch(() => {});
 
     const inAuthGroup = segments[0] === 'auth';
     const inTabsGroup = segments[0] === '(tabs)';
-    const isUnmatched = pathname === '/+not-found' || pathname === '' || pathname === '/' || !segments[0];
+    const isIndex = segments.length === 0 || segments[0] === 'index';
 
-    if (__DEV__) console.log('🧭 Navigation:', { 
-      session: !!session, 
-      pathname,
-      inAuthGroup, 
-      inTabsGroup,
-      isUnmatched,
-      hasRedirected
-    });
+    console.log('🧭 Navigation check:', { session: !!session, inAuthGroup, inTabsGroup, isIndex });
 
-    // Предотвращаем множественные редиректы
-    if (hasRedirected) return;
-
-    // Если попали на несуществующий роут - редиректим
-    if (isUnmatched) {
-      setHasRedirected(true);
-      if (session) {
-        if (__DEV__) console.log('🏠 Unmatched -> tabs');
-        router.replace('/(tabs)');
-      } else {
-        if (__DEV__) console.log('🔐 Unmatched -> login');
+    if (session) {
+      // Пользователь авторизован
+      if (inAuthGroup || isIndex) {
+        console.log('✅ User logged in, redirecting to tabs...');
+        router.replace('/(tabs)/home');
+      }
+    } else {
+      // Нет сессии
+      if (!inAuthGroup) {
+        console.log('🔐 No session, redirecting to login...');
         router.replace('/auth/login');
       }
-      setTimeout(() => setHasRedirected(false), 500);
-      return;
     }
+  }, [session, loading, segments, navigationState?.key]);
 
-    // Нет сессии и мы не на логине -> иди логиниться
-    if (!session && !inAuthGroup) {
-      setHasRedirected(true);
-      if (__DEV__) console.log('No session -> login');
-      router.replace('/auth/login');
-      setTimeout(() => setHasRedirected(false), 500);
-    } 
-    // Есть сессия но мы на экране логина -> иди в приложение
-    else if (session && inAuthGroup) {
-      setHasRedirected(true);
-      if (__DEV__) console.log('Has session -> tabs');
-      router.replace('/(tabs)');
-      setTimeout(() => setHasRedirected(false), 500);
-    }
-  }, [session, loading, segments, navigationState, pathname, hasRedirected]);
-
-  // Показываем загрузку только пока идет проверка авторизации
-  if (loading) {
+  // ЭКРАН ЗАГРУЗКИ С ОТЛАДКОЙ
+  if (loading || !navigationState?.key) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' }}>
-        <ActivityIndicator size="large" color="#FF6B35" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#D4A574" />
+        <Text style={styles.debugText}>
+          System Status:{'\n'}
+          Loading: {String(loading)}{'\n'}
+          Nav Ready: {String(!!navigationState?.key)}{'\n'}
+          Session: {session ? 'Active' : 'None'}
+        </Text>
       </View>
     );
   }
 
-  return (
-    <>
-      <StatusBar style="light" />
-      <Slot />
-    </>
-  );
-}
+  return <Slot />;
+};
 
 export default function RootLayout() {
   return (
@@ -220,3 +201,19 @@ export default function RootLayout() {
     </SettingsProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
+  },
+  debugText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+});

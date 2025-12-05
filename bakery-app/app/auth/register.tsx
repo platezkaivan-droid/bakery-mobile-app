@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useRootNavigationState } from 'expo-router';
+import { router } from 'expo-router';
 import { Colors } from '../../src/constants/colors';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -17,20 +17,14 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signUp, signInWithGoogle, session } = useAuth();
-  const navigationState = useRootNavigationState();
 
-  // Проверка: если пользователь уже авторизован, перенаправляем на главную
+  // ВАЖНО: Следим за сессией. Как только вошли - сразу на главную!
   useEffect(() => {
-    // Ждем готовности навигации
-    if (!navigationState?.key) return;
-    
-    // Если есть сессия, перенаправляем
     if (session) {
-      setTimeout(() => {
-        router.replace('/(tabs)/home');
-      }, 100);
+      console.log('✅ Register: Session detected, redirecting to tabs');
+      router.replace('/(tabs)');
     }
-  }, [session, navigationState]);
+  }, [session]);
 
   const handleRegister = async () => {
     if (__DEV__) console.log('Register button clicked!');
@@ -59,12 +53,34 @@ export default function RegisterScreen() {
     try {
       console.log('Calling signUp...', { email, fullName, phone });
       await signUp(email, password, fullName, phone);
-      alert('Успешно! Регистрация завершена.');
-      // Автоматически перенаправляем на главную страницу
-      router.replace('/(tabs)/home');
+      
+      // Показываем сообщение о подтверждении email
+      Alert.alert(
+        '📧 Проверьте почту!',
+        `Мы отправили письмо на ${email}.\n\nПожалуйста, перейдите по ссылке в письме для подтверждения вашего аккаунта.\n\nПосле подтверждения вы сможете войти в приложение.`,
+        [
+          {
+            text: 'Понятно',
+            onPress: () => router.replace('/auth/login'),
+          }
+        ]
+      );
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert('Ошибка регистрации: ' + error.message);
+      
+      // Проверяем, если пользователь уже существует
+      if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+        Alert.alert(
+          'Аккаунт существует',
+          'Пользователь с таким email уже зарегистрирован. Попробуйте войти.',
+          [
+            { text: 'Войти', onPress: () => router.replace('/auth/login') },
+            { text: 'Отмена', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert('Ошибка регистрации', error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,14 +94,15 @@ export default function RegisterScreen() {
 
     setGoogleLoading(true);
     try {
-      const { url } = await signInWithGoogle();
-      if (url) {
-        // Открываем браузер для OAuth
-        const { Linking } = await import('react-native');
-        await Linking.openURL(url);
-      }
+      // Нативный Google Sign-In - без браузера!
+      await signInWithGoogle();
+      // Редирект произойдет автоматически через Redirect компонент выше
+      // когда session обновится в AuthContext
     } catch (error: any) {
-      Alert.alert('Ошибка', 'Не удалось войти через Google: ' + error.message);
+      // Не показываем ошибку если пользователь отменил
+      if (error.message !== 'Вход отменен') {
+        Alert.alert('Ошибка', 'Не удалось войти через Google: ' + error.message);
+      }
     } finally {
       setGoogleLoading(false);
     }

@@ -1,30 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GiftedChat, IMessage, Bubble, InputToolbar, Send } from 'react-native-gifted-chat';
 import { supabase } from '../src/lib/supabase';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Text, TextInput, useColorScheme } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../src/constants/colors';
 import { useAuth } from '../src/context/AuthContext';
+import { useSettings } from '../src/context/SettingsContext';
 
 export default function SupportChat() {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDark, colors } = useSettings();
 
-  // Цвета для темной/светлой темы
+  // Цвета для темной/светлой темы (используем тему из настроек)
   const theme = {
-    background: isDark ? '#121212' : Colors.background,
-    bubbleLeft: isDark ? '#2C2C2C' : Colors.surface,
-    textLeft: isDark ? '#ffffff' : Colors.text,
-    bubbleRight: Colors.accent,
+    background: colors.background,
+    surface: colors.surface,
+    bubbleLeft: colors.surface,
+    textLeft: colors.text,
+    bubbleRight: colors.accent,
     textRight: '#ffffff',
-    inputBackground: isDark ? '#1E1E1E' : Colors.surface,
-    inputBorder: isDark ? '#333333' : Colors.border,
-    inputText: isDark ? '#ffffff' : Colors.text,
+    inputBackground: colors.surface,
+    inputBorder: colors.border,
+    inputText: colors.text,
+    textMuted: colors.textMuted,
+    headerBg: colors.surface,
+    headerText: colors.text,
   };
 
   useEffect(() => {
@@ -129,8 +133,8 @@ export default function SupportChat() {
 
   if (loading || !user) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.accent} />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -138,13 +142,13 @@ export default function SupportChat() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+      <View style={[styles.header, { backgroundColor: theme.headerBg, borderBottomColor: theme.inputBorder }]}>
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: theme.background }]} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={theme.headerText} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Поддержка</Text>
-          <Text style={styles.headerSubtitle}>Обычно отвечаем в течение часа</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Поддержка</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textMuted }]}>Обычно отвечаем в течение часа</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -162,7 +166,7 @@ export default function SupportChat() {
         renderAvatar={(props) => {
           if (props.currentMessage?.user._id === 'admin') {
             return (
-              <View style={styles.adminAvatar}>
+              <View style={[styles.adminAvatar, { backgroundColor: colors.accent }]}>
                 <Ionicons name="headset" size={20} color="#fff" />
               </View>
             );
@@ -194,7 +198,9 @@ export default function SupportChat() {
               borderTopColor: theme.inputBorder,
               borderTopWidth: 1,
               paddingHorizontal: 16,
-              paddingVertical: 8,
+              paddingVertical: 12,
+              paddingBottom: 20,
+              minHeight: 60,
             }}
             primaryStyle={{ alignItems: 'center' }}
           />
@@ -202,11 +208,27 @@ export default function SupportChat() {
         textInputStyle={{ 
           color: theme.inputText,
           paddingHorizontal: 12,
+          paddingVertical: 10,
+          fontSize: 16,
+          lineHeight: 22,
+          minHeight: 44,
+          backgroundColor: isDark ? '#2a2a2a' : '#f5f5f5',
+          borderRadius: 22,
+          marginRight: 8,
         }}
         renderSend={(props) => (
           <Send {...props}>
-            <View style={{ marginRight: 10, marginBottom: 8 }}>
-              <Ionicons name="send" size={24} color={Colors.accent} />
+            <View style={{ 
+              marginRight: 4, 
+              marginBottom: 12,
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: colors.accent,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+              <Ionicons name="send" size={20} color="#fff" />
             </View>
           </Send>
         )}

@@ -7,9 +7,28 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:616728560840:android:2c21ef6cee8430f41351fd",
+        "mobilesdk_app_id": "1:616728560840:android:acf98cbacfc33e9f1351fd",
         "android_client_info": {
           "package_name": "com.bakery.pavlova"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAH_h1PaYZsn9dhIdt362DSPuFV1Sd6iSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616728560840:android:2c21ef6cee8430f41351fd",
+        "android_client_info": {
+          "package_name": "com.bakeryapp"
         }
       },
       "oauth_client": [],

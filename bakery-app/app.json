@@ -16,7 +16,8 @@
       "package": "com.bakery.pavlova",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#E8A838"
       },
       "intentFilters": [
         {
