@@ -719,63 +719,39 @@
       }
     }
 
-    // Отправка push-уведомления через Firebase HTTP v1 API
-    // ВАЖНО: Для работы push-уведомлений нужно настроить Firebase Cloud Function
-    // или использовать сервер с Firebase Admin SDK
+    // Отправка push-уведомления через Supabase Edge Function + FCM v1 API
     async function sendPushNotification(userId, messageText) {
       try {
-        // Получаем FCM токен пользователя
-        const { data: tokens, error } = await supabase
-          .from('user_fcm_tokens')
-          .select('fcm_token')
-          .eq('user_id', userId)
-          .order('updated_at', { ascending: false })
-          .limit(1);
+        console.log('📤 Отправка push-уведомления пользователю:', userId);
 
-        if (error) {
-          console.log('❌ Ошибка получения FCM токена:', error);
-          return;
-        }
-
-        if (!tokens || tokens.length === 0) {
-          console.log('⚠️ FCM токен не найден для пользователя:', userId);
-          console.log('💡 Пользователь должен открыть приложение, чтобы зарегистрировать токен');
-          return;
-        }
-
-        const fcmToken = tokens[0].fcm_token;
-        console.log('📤 FCM токен найден:', fcmToken.substring(0, 30) + '...');
-
-        // Сохраняем уведомление в таблицу pending_notifications
-        // Приложение получит его через Supabase Realtime
-        const { error: notifError } = await supabase
-          .from('pending_notifications')
-          .insert({
+        // Вызываем Supabase Edge Function для отправки push
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
             user_id: userId,
-            title: '💬 Поддержка',
+            title: '💬 Поддержка Павлова',
             body: messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText,
-            data: JSON.stringify({ type: 'support_chat', message: messageText }),
-            fcm_token: fcmToken,
-            sent: false
-          });
+            data: { type: 'support_chat' }
+          })
+        });
 
-        if (notifError) {
-          console.log('⚠️ Не удалось сохранить уведомление:', notifError.message);
-          // Это не критично - сообщение уже сохранено в support_messages
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ Push-уведомление отправлено!');
+          showNotification('📱 Push отправлен!');
         } else {
-          console.log('✅ Уведомление сохранено в очередь');
+          console.log('⚠️ Push не отправлен:', result.error || result.message);
+          // Не показываем ошибку пользователю - сообщение всё равно сохранено
         }
-
-        // Альтернатива: Если у вас настроен Firebase Cloud Function,
-        // можно вызвать его напрямую:
-        // await fetch('https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net/sendPushNotification', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ token: fcmToken, title: '💬 Поддержка', body: messageText })
-        // });
 
       } catch (error) {
         console.error('❌ Ошибка отправки push:', error);
+        // Не критично - сообщение уже сохранено в support_messages
       }
     }
 
