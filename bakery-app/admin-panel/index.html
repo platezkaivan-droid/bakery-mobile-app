@@ -222,16 +222,173 @@
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
   <script>
+
     // Supabase config
     const SUPABASE_URL = 'https://qkyhwdmhkoizxjazwnti.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFreWh3ZG1oa29penhqYXp3bnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1ODg5MTEsImV4cCI6MjA4MDE2NDkxMX0.UsxL1RFnwavruSKkB5KeVDhMfZk_rUJxyaBsuttu9qA';
+    
+    // Firebase config for FCM
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBnlgH5TE3CXy0BO0GZBzp0ZGwDQdYkJzE",
+      authDomain: "bakery-app-6452b.firebaseapp.com",
+      projectId: "bakery-app-6452b",
+      storageBucket: "bakery-app-6452b.firebasestorage.app",
+      messagingSenderId: "305232989194",
+      appId: "1:305232989194:web:a1b2c3d4e5f6g7h8"
+    };
+
+    // Firebase Service Account for server-side push
+    const SERVICE_ACCOUNT = {
+      project_id: "bakery-app-6452b",
+      private_key: `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCWA9M1syUBVNcd
+i0hmqpMlwWnKtOf1fUhYnBuSrJnodDUekfFnTbr3vygs4UV9dvqcIjuXBauyo/EW
+fBf9UF162pmuXAz8BPhl0GX+ZQoaNb0v7Vw4xPudw06jcTBmgsOhsIDp+++EapmY
+UedNoiOF5MvdCZIbaEip7MBgoF3RJPbRFFw4koFr57ta5qXN/LOAgyF6AJ2xe5UE
+yjf6rUWH0QrUECDwedVyivKDmb6ZeY82pa2px6deMcwBwgvEKxt6FR+fc+CzcGt/
+QosJWYbCdRE24P2DZhHH7BdUv+M9Vc42+8pn4+FOdr3OGaNPJTReLX1YtiIVerYC
+G/lqNMjdAgMBAAECggEAHBFfJT79f4BGN2rmAv+LRJcpmhm7BL2KGborlofgzBNi
+FPQtfKyYfN4xQCRuAgmO3kOxbpJLC8OMyi4xtt2gf+oCsxLaAxVS/Im/a5ewCjNf
+0GXSyXRht6ThQ8dbzPJOdCQ4Go9ewyHG1y8L3gSmLNkgI500zxf18IUxgWK/6u98
+F6l3nfLJHxicKBErvVwFISazBqVexod8PZDRmQeDa4qV3MvCJEVkErNffHV/pE7c
++LNcZSfxBbCd3120MB11T/84oRqdV2kK2oHMbuc+Twaxsr9sw4JF8wLnfk+pu+1Y
+Y3Vczp5rNkxYgrwnxK1I6fQFxW7M1ubkqemXqY2xAQKBgQDRfGreBpfotTm/vRZT
+OyBDa7Xo9uJguDtelnhL3jPgzvWUiWjD6w2wHVnq04o8OIyoD7+AZwlAksLTU6T3
+k+Qb8bbbkg+opKKp6IfJSxUVATxPN5rzmst0+zF27h/aKmqEcIJTKVp/Ag+1d6Qg
+edNBjSHyixPjsVZZH8lkiM5OvQKBgQC3UvWV7J2LRVyzky4mbXQfovslxyD23nr8
+1C4dLTHbk5yXapAAs0IiEvAY2kEctY1h67mvURm3TlfOd1cAm/iNbXeDuM/FRdQu
+VAh8KitIVALro3j9cjTzSg9LkjF3m6TspRNehpSJPawUFw+eSmvC+zK20wzL/Rij
+hEjx7bCUoQKBgC0kvbbo/tWEMFS0f9oh1LsSvBnfEju7l/ezP2tCEDXzA5Ml5XDK
+96ErQhRLz+9YVF9nPWKDUcgbmGaIEPXVZgPrm/dHS56RFAi/dnuXdYyYPpHnrrmu
+cwfblfZGLJEMMPYndL5NHBZgsFfv12u0NSVcL6Of+wJHVg9QvUqv/J2VAoGBAJBx
+51toAoJX9sDveO+CUnsS+fw8ODcL+a/4pxUKJTyzxDByIGDM3ZDnhxKt9ZvfWTUM
+fVQr/K04J2thEMZEHsWguQiqt9riOFsAj2b1+wCUYXC1b4GTWTFQ61hKKnvpwTtM
+nkReme7BDzMNMJsyXFJXhxASnwSjuaQteSRWeknBAoGBAJvCz4+YRIze8ktrhM4/
+n2pcd/bzo9Jg+olDbES7TM7u/k/cW+A8vVkKWC8pBhVYC3mUeB1xygRF9LORETtW
+8HTtG1qi3saQjqtK3ZDwMZJfAGK5i7VqlRDXpgj5d5O72cl9GERAxUtASCOTxlFW
+zTdAVhNVNqmDRfj2tVbv/VEB
+-----END PRIVATE KEY-----`,
+      client_email: "firebase-adminsdk-fbsvc@bakery-app-6452b.iam.gserviceaccount.com",
+      token_uri: "https://oauth2.googleapis.com/token"
+    };
     
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUserId = null;
     let allMessages = [];
     let users = {};
+    let accessToken = null;
+    let tokenExpiry = 0;
+
+    // Base64 URL encode
+    function base64UrlEncode(str) {
+      return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    // Create JWT for Google OAuth
+    async function createJWT() {
+      const header = { alg: 'RS256', typ: 'JWT' };
+      const now = Math.floor(Date.now() / 1000);
+      const payload = {
+        iss: SERVICE_ACCOUNT.client_email,
+        sub: SERVICE_ACCOUNT.client_email,
+        aud: SERVICE_ACCOUNT.token_uri,
+        iat: now,
+        exp: now + 3600,
+        scope: 'https://www.googleapis.com/auth/firebase.messaging'
+      };
+
+      const headerB64 = base64UrlEncode(JSON.stringify(header));
+      const payloadB64 = base64UrlEncode(JSON.stringify(payload));
+      const signatureInput = `${headerB64}.${payloadB64}`;
+
+      // Import private key
+      const pemContents = SERVICE_ACCOUNT.private_key
+        .replace('-----BEGIN PRIVATE KEY-----', '')
+        .replace('-----END PRIVATE KEY-----', '')
+        .replace(/\n/g, '');
+      
+      const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'pkcs8',
+        binaryKey,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      const signature = await crypto.subtle.sign(
+        'RSASSA-PKCS1-v1_5',
+        cryptoKey,
+        new TextEncoder().encode(signatureInput)
+      );
+      
+      const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      
+      return `${headerB64}.${payloadB64}.${signatureB64}`;
+    }
+
+    // Get OAuth2 access token
+    async function getAccessToken() {
+      if (accessToken && Date.now() < tokenExpiry) {
+        return accessToken;
+      }
+
+      const jwt = await createJWT();
+      
+      const response = await fetch(SERVICE_ACCOUNT.token_uri, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+      });
+      
+      const data = await response.json();
+      accessToken = data.access_token;
+      tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+      return accessToken;
+    }
+
+    // Send FCM push notification
+    async function sendFCMPush(fcmToken, title, body) {
+      try {
+        const token = await getAccessToken();
+        
+        const message = {
+          message: {
+            token: fcmToken,
+            notification: { title, body },
+            android: {
+              priority: 'high',
+              notification: { sound: 'default', channel_id: 'default' }
+            }
+          }
+        };
+
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${SERVICE_ACCOUNT.project_id}/messages:send`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(message)
+          }
+        );
+
+        const result = await response.json();
+        console.log('FCM Response:', response.status, result);
+        return response.ok;
+      } catch (error) {
+        console.error('FCM Error:', error);
+        return false;
+      }
+    }
 
     // Load messages
     async function loadMessages() {
@@ -321,58 +478,63 @@
       const text = input.value.trim();
       if (!text || !currentUserId) return;
 
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.textContent = 'Отправка...';
+
       try {
-        // Save message
+        // Save message to database
         const { error } = await supabase
           .from('support_messages')
           .insert({ user_id: currentUserId, text: text, is_admin: true });
         if (error) throw error;
         input.value = '';
 
-        // Send push via Edge Function
-        await sendPush(currentUserId, text);
+        // Send push notification
+        await sendPushToUser(currentUserId, text);
+        
+        btn.textContent = 'Отправить';
+        btn.disabled = false;
       } catch (error) {
         showNotification('Ошибка: ' + error.message, true);
+        btn.textContent = 'Отправить';
+        btn.disabled = false;
       }
     }
 
-    async function sendPush(userId, messageText) {
+    async function sendPushToUser(userId, messageText) {
       try {
-        // Get FCM token
-        const { data: tokens } = await supabase
+        // Get FCM token from database
+        const { data: tokens, error } = await supabase
           .from('user_fcm_tokens')
           .select('fcm_token')
           .eq('user_id', userId)
           .order('updated_at', { ascending: false })
           .limit(1);
 
-        if (!tokens || tokens.length === 0) {
-          console.log('No FCM token found');
+        if (error || !tokens || tokens.length === 0) {
+          console.log('No FCM token found for user');
+          showNotification('⚠️ Токен не найден', true);
           return;
         }
 
-        // Call Edge Function
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            title: '💬 Поддержка Павлова',
-            body: messageText.substring(0, 100)
-          })
-        });
+        const fcmToken = tokens[0].fcm_token;
+        console.log('Sending push to:', fcmToken.substring(0, 30) + '...');
 
-        const result = await response.json();
-        if (result.success) {
+        const success = await sendFCMPush(
+          fcmToken,
+          '💬 Поддержка Павлова',
+          messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText
+        );
+
+        if (success) {
           showNotification('📱 Push отправлен!');
         } else {
-          console.log('Push failed:', result);
+          showNotification('⚠️ Ошибка отправки push', true);
         }
       } catch (error) {
         console.error('Push error:', error);
+        showNotification('❌ Ошибка: ' + error.message, true);
       }
     }
 
@@ -400,12 +562,27 @@
       setTimeout(() => notification.remove(), 3000);
     }
 
-    // Realtime
+    // Realtime subscription
     function setupRealtime() {
       supabase
         .channel('admin_chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, (payload) => {
-          if (!payload.new.is_admin) showNotification('💬 Новое сообщение!');
+          if (!payload.new.is_admin) {
+            showNotification('💬 Новое сообщение!');
+            // Play sound
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.frequency.value = 800;
+              gain.gain.setValueAtTime(0.3, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.3);
+            } catch(e) {}
+          }
           allMessages.unshift(payload.new);
           processUsers();
           updateStats();
