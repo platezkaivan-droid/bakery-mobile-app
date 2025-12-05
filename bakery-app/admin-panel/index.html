@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💬 Админ-панель чата поддержки - Павлова</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 15px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 24px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #FF6B35;
+    }
+    .stat-label { color: #666; margin-top: 5px; font-size: 13px; }
+    .chat-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 15px;
+      height: calc(100vh - 200px);
+      min-height: 400px;
+    }
+    @media (max-width: 768px) {
+      .chat-container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .users-list { max-height: 250px; }
+      .chat-area { height: 400px; }
+    }
+    .users-list {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      overflow-y: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .users-list h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #FF6B35;
+    }
+    .user-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8f9fa;
+    }
+    .user-item:hover { background: #e9ecef; transform: translateX(3px); }
+    .user-item.active {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border: 2px solid #FF6B35;
+    }
+    .user-item.unread {
+      background: #e3f2fd;
+      font-weight: bold;
+    }
+    .user-name { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+    .user-last-message {
+      font-size: 12px;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .user-time { font-size: 11px; color: #999; margin-top: 3px; }
+    .unread-badge {
+      background: #FF6B35;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 5px;
+    }
+    .chat-area {
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .chat-header {
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      color: white;
+      font-weight: 600;
+    }
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      padding: 10px 14px;
+      margin: 5px 0;
+      border-radius: 12px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background: #e3f2fd;
+      align-self: flex-start;
+    }
+    .message.admin {
+      background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+      color: white;
+      align-self: flex-end;
+    }
+    .message-time { font-size: 10px; opacity: 0.7; margin-top: 3px; }
+    .input-area {
+      padding: 12px;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 10px;
+    }
+    textarea {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+    }
+    textarea:focus { outline: none; border-color: #FF6B35; }
+    button {
+      padding: 10px 20px;
+      background: #FF6B35;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #e55a2b; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .empty-state { text-align: center; padding: 40px; color: #999; }
+    .loading { text-align: center; padding: 30px; color: #666; }
+    .notification {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+    .notification.error { background: #f44336; }
+    @keyframes slideIn {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💬 Админ-панель чата поддержки</h1>
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalUsers">0</div>
+        <div class="stat-label">Пользователей</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalMessages">0</div>
+        <div class="stat-label">Сообщений</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="unreadChats">0</div>
+        <div class="stat-label">Непрочитанных</div>
+      </div>
+    </div>
+    <div class="chat-container">
+      <div class="users-list">
+        <h3>Пользователи</h3>
+        <div id="usersList"><div class="loading">Загрузка...</div></div>
+      </div>
+      <div class="chat-area">
+        <div class="chat-header" id="chatHeader">Выберите пользователя</div>
+        <div class="messages" id="messages">
+          <div class="empty-state">Выберите пользователя из списка</div>
+        </div>
+        <div class="input-area">
+          <textarea id="messageInput" placeholder="Напишите ответ..." rows="2" disabled></textarea>
+          <button id="sendBtn" onclick="sendMessage()" disabled>Отправить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://qkyhwdmhkoizxjazwnti.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFreWh3ZG1oa29penhqYXp3bnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1ODg5MTEsImV4cCI6MjA4MDE2NDkxMX0.UsxL1RFnwavruSKkB5KeVDhMfZk_rUJxyaBsuttu9qA';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUserId = null;
+    let allMessages = [];
+    let users = {};
+
+    // Load messages
+    async function loadMessages() {
+      try {
+        const { data, error } = await supabase
+          .from('support_messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        allMessages = data || [];
+        processUsers();
+        updateStats();
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification('Ошибка загрузки: ' + error.message, true);
+      }
+    }
+
+    function processUsers() {
+      users = {};
+      allMessages.forEach(msg => {
+        if (!users[msg.user_id]) {
+          users[msg.user_id] = { id: msg.user_id, messages: [], lastMessage: null, unreadCount: 0 };
+        }
+        users[msg.user_id].messages.push(msg);
+        if (!users[msg.user_id].lastMessage || new Date(msg.created_at) > new Date(users[msg.user_id].lastMessage.created_at)) {
+          users[msg.user_id].lastMessage = msg;
+        }
+        if (!msg.is_admin) {
+          const hasReply = users[msg.user_id].messages.some(m => m.is_admin && new Date(m.created_at) > new Date(msg.created_at));
+          if (!hasReply) users[msg.user_id].unreadCount++;
+        }
+      });
+      renderUsersList();
+    }
+
+    function renderUsersList() {
+      const container = document.getElementById('usersList');
+      const userArray = Object.values(users).sort((a, b) => new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at));
+
+      if (userArray.length === 0) {
+        container.innerHTML = '<div class="empty-state">Нет сообщений</div>';
+        return;
+      }
+
+      container.innerHTML = userArray.map(user => `
+        <div class="user-item ${user.unreadCount > 0 ? 'unread' : ''} ${currentUserId === user.id ? 'active' : ''}" 
+             onclick="selectUser('${user.id}')">
+          <div class="user-name">
+            👤 Пользователь
+            ${user.unreadCount > 0 ? `<span class="unread-badge">${user.unreadCount}</span>` : ''}
+          </div>
+          <div class="user-last-message">${user.lastMessage.text}</div>
+          <div class="user-time">${formatTime(user.lastMessage.created_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectUser(userId) {
+      currentUserId = userId;
+      renderUsersList();
+      renderMessages();
+      document.getElementById('chatHeader').textContent = `Чат с пользователем`;
+      document.getElementById('messageInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+    }
+
+    function renderMessages() {
+      const container = document.getElementById('messages');
+      if (!currentUserId) {
+        container.innerHTML = '<div class="empty-state">Выберите пользователя</div>';
+        return;
+      }
+      const userMessages = users[currentUserId].messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      container.innerHTML = userMessages.map(msg => `
+        <div class="message ${msg.is_admin ? 'admin' : 'user'}">
+          <div>${msg.text}</div>
+          <div class="message-time">${formatTime(msg.created_at)}</div>
+        </div>
+      `).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text || !currentUserId) return;
+
+      try {
+        // Save message
+        const { error } = await supabase
+          .from('support_messages')
+          .insert({ user_id: currentUserId, text: text, is_admin: true });
+        if (error) throw error;
+        input.value = '';
+
+        // Send push via Edge Function
+        await sendPush(currentUserId, text);
+      } catch (error) {
+        showNotification('Ошибка: ' + error.message, true);
+      }
+    }
+
+    async function sendPush(userId, messageText) {
+      try {
+        // Get FCM token
+        const { data: tokens } = await supabase
+          .from('user_fcm_tokens')
+          .select('fcm_token')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (!tokens || tokens.length === 0) {
+          console.log('No FCM token found');
+          return;
+        }
+
+        // Call Edge Function
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            title: '💬 Поддержка Павлова',
+            body: messageText.substring(0, 100)
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification('📱 Push отправлен!');
+        } else {
+          console.log('Push failed:', result);
+        }
+      } catch (error) {
+        console.error('Push error:', error);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('totalUsers').textContent = Object.keys(users).length;
+      document.getElementById('totalMessages').textContent = allMessages.length;
+      document.getElementById('unreadChats').textContent = Object.values(users).filter(u => u.unreadCount > 0).length;
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now - date;
+      if (diff < 60000) return 'сейчас';
+      if (diff < 3600000) return Math.floor(diff / 60000) + ' мин';
+      if (diff < 86400000) return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString('ru-RU');
+    }
+
+    function showNotification(message, isError = false) {
+      const notification = document.createElement('div');
+      notification.className = 'notification' + (isError ? ' error' : '');
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Realtime
+    function setupRealtime() {
+      supabase
+        .channel('admin_chat')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, (payload) => {
+          if (!payload.new.is_admin) showNotification('💬 Новое сообщение!');
+          allMessages.unshift(payload.new);
+          processUsers();
+          updateStats();
+          if (currentUserId === payload.new.user_id) renderMessages();
+        })
+        .subscribe();
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('messageInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+      });
+      await loadMessages();
+      setupRealtime();
+      setInterval(loadMessages, 30000);
+    });
+  </script>
+</body>
+</html>
